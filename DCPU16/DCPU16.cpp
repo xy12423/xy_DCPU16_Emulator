@@ -7,6 +7,16 @@ using namespace std;
 USHORT m_ret[INS_RET_LEN];
 string m_arg[INS_RET_LEN];
 
+#ifndef __CPP11_thread
+#ifdef _P_WIN
+DWORD threadID = 0;
+DWORD WINAPI doCodeThreadStarter(LPVOID lpParam)
+{
+	doCodeThread();
+}
+#endif
+#endif
+
 #ifdef _P_WIN
 DWORD_PTR zero = 0;
 MMRESULT timerH = 0;
@@ -226,13 +236,17 @@ void trace(string arg = "")
 
 void proceed()
 {
-#if __cplusplus >= 201103L || _MSC_VER >= 1700
+#ifdef __CPP11_thread
 	thread em(doCodeThread);
 	em.detach();
+#else
+#ifdef _P_WIN
+	CreateThread(NULL, 0, &doCodeThreadStarter, NULL, 0, &threadID);
+#endif
+#endif
 	clockStarter();
 	getchar();
 	doCodeB = false;
-#endif
 }
 
 struct pendItem

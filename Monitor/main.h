@@ -150,81 +150,81 @@ BOOL CreateGLWindow(char* title, int bits, bool fullscreenflag)
 		hInstance,
 		NULL)))
 	{
-		KillGLWindow();								// Reset The Display
+		KillGLWindow();
 		MessageBox(NULL, "Window Creation Error.", "ERROR", MB_OK | MB_ICONEXCLAMATION);
-		return FALSE;								// Return FALSE
+		return FALSE;
 	}
 
-	static	PIXELFORMATDESCRIPTOR pfd =				// pfd Tells Windows How We Want Things To Be
+	static	PIXELFORMATDESCRIPTOR pfd =	
 	{
-		sizeof(PIXELFORMATDESCRIPTOR),				// Size Of This Pixel Format Descriptor
-		1,											// Version Number
-		PFD_DRAW_TO_WINDOW |						// Format Must Support Window
-		PFD_SUPPORT_OPENGL |						// Format Must Support OpenGL
-		PFD_DOUBLEBUFFER,							// Must Support Double Buffering
-		PFD_TYPE_RGBA,								// Request An RGBA Format
-		bits,										// Select Our Color Depth
-		0, 0, 0, 0, 0, 0,							// Color Bits Ignored
-		0,											// No Alpha Buffer
-		0,											// Shift Bit Ignored
-		0,											// No Accumulation Buffer
-		0, 0, 0, 0,									// Accumulation Bits Ignored
-		16,											// 16Bit Z-Buffer (Depth Buffer)  
-		0,											// No Stencil Buffer
-		0,											// No Auxiliary Buffer
-		PFD_MAIN_PLANE,								// Main Drawing Layer
-		0,											// Reserved
-		0, 0, 0										// Layer Masks Ignored
+		sizeof(PIXELFORMATDESCRIPTOR),
+		1,
+		PFD_DRAW_TO_WINDOW |
+		PFD_SUPPORT_OPENGL |
+		PFD_DOUBLEBUFFER,
+		PFD_TYPE_RGBA,
+		bits,
+		0, 0, 0, 0, 0, 0,
+		0,
+		0,
+		0,
+		0, 0, 0, 0,
+		16,
+		0,
+		0,
+		PFD_MAIN_PLANE,
+		0,
+		0, 0, 0
 	};
 
-	if (!(hDC = GetDC(hWnd)))							// Did We Get A Device Context?
+	if (!(hDC = GetDC(hWnd)))
 	{
-		KillGLWindow();								// Reset The Display
+		KillGLWindow();
 		MessageBox(NULL, "Can't Create A GL Device Context.", "ERROR", MB_OK | MB_ICONEXCLAMATION);
-		return FALSE;								// Return FALSE
+		return FALSE;
 	}
 
-	if (!(PixelFormat = ChoosePixelFormat(hDC, &pfd)))	// Did Windows Find A Matching Pixel Format?
+	if (!(PixelFormat = ChoosePixelFormat(hDC, &pfd)))
 	{
-		KillGLWindow();								// Reset The Display
+		KillGLWindow();
 		MessageBox(NULL, "Can't Find A Suitable PixelFormat.", "ERROR", MB_OK | MB_ICONEXCLAMATION);
-		return FALSE;								// Return FALSE
+		return FALSE;
 	}
 
-	if (!SetPixelFormat(hDC, PixelFormat, &pfd))		// Are We Able To Set The Pixel Format?
+	if (!SetPixelFormat(hDC, PixelFormat, &pfd))
 	{
-		KillGLWindow();								// Reset The Display
+		KillGLWindow();
 		MessageBox(NULL, "Can't Set The PixelFormat.", "ERROR", MB_OK | MB_ICONEXCLAMATION);
-		return FALSE;								// Return FALSE
+		return FALSE;
 	}
 
-	if (!(hRC = wglCreateContext(hDC)))				// Are We Able To Get A Rendering Context?
+	if (!(hRC = wglCreateContext(hDC)))
 	{
-		KillGLWindow();								// Reset The Display
+		KillGLWindow();
 		MessageBox(NULL, "Can't Create A GL Rendering Context.", "ERROR", MB_OK | MB_ICONEXCLAMATION);
-		return FALSE;								// Return FALSE
+		return FALSE;
 	}
 
-	if (!wglMakeCurrent(hDC, hRC))					// Try To Activate The Rendering Context
+	if (!wglMakeCurrent(hDC, hRC))
 	{
-		KillGLWindow();								// Reset The Display
+		KillGLWindow();
 		MessageBox(NULL, "Can't Activate The GL Rendering Context.", "ERROR", MB_OK | MB_ICONEXCLAMATION);
-		return FALSE;								// Return FALSE
+		return FALSE;
 	}
 
-	ShowWindow(hWnd, SW_SHOW);						// Show The Window
-	SetForegroundWindow(hWnd);						// Slightly Higher Priority
-	SetFocus(hWnd);									// Sets Keyboard Focus To The Window
-	ReSizeGLScene(WINDOW_WIDTH, WINDOW_HEIGHT);					// Set Up Our Perspective GL Screen
+	ShowWindow(hWnd, SW_SHOW);
+	SetForegroundWindow(hWnd);
+	SetFocus(hWnd);
+	ReSizeGLScene(WINDOW_WIDTH, WINDOW_HEIGHT);
 
-	if (!InitGL())									// Initialize Our Newly Created GL Window
+	if (!InitGL())
 	{
-		KillGLWindow();								// Reset The Display
+		KillGLWindow();
 		MessageBox(NULL, "Initialization Failed.", "ERROR", MB_OK | MB_ICONEXCLAMATION);
-		return FALSE;								// Return FALSE
+		return FALSE;
 	}
 
-	return TRUE;									// Success
+	return TRUE;
 }
 
 bool bigLetter = false;
@@ -464,7 +464,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			return 0;
 	}
 
-	// Pass All Unhandled Messages To DefWindowProc
 	return DefWindowProc(hWnd, uMsg, wParam, lParam);
 }
 
@@ -619,7 +618,7 @@ DWORD WINAPI MainThread(LPVOID lpParam)
 
 	while (!done)
 	{
-		if (GetMessage(&msg, NULL, 0, 0))	// Is There A Message Waiting?
+		if (GetMessage(&msg, NULL, 0, 0))
 		{
 			if (msg.message == WM_QUIT)
 				done = TRUE;
