@@ -10,8 +10,15 @@
 
 int doL1(opcode code)
 {
-
-	return -1;
+	USHORT op = code.a;
+	int cycle = -1;
+	switch (op)
+	{
+		case 0:
+			cycle = 1;
+			break;
+	}
+	return cycle;
 }
 
 int doL2(opcode code)
@@ -91,41 +98,46 @@ int doL3()
 	if (ocode.op == 0x00)
 		return doL2(ocode);
 	opcode code;
-	int cycleA = 0, cycle = 0;
+	int cycleA = 0, cycleB = 0, cycle = 0;
 	code.op = ocode.op;
-	cycleA = retb(ocode.b, code.b);
-	cycleA += reta(ocode.a, code.a);
+	cycleB = retb(ocode.b, code.b);
+	if (cycleB < 0)
+		return -1;
+	cycleA = reta(ocode.a, code.a);
+	if (cycleA < 0)
+		return -1;
+	cycle = cycleA + cycleB;
 	UINT res = 0;
 	USHORT op = code.op, b = code.b, a = code.a;
 	switch (op)
 	{
 		case 0x01:
 			res = a;
-			cycle = cycleA + 1;
+			cycle += 1;
 			break;
 		case 0x02:
 			res = b + a;
 			ex = res >> 16;
 			res = res & 0xFFFF;
-			cycle = cycleA + 2;
+			cycle += 2;
 			break;
 		case 0x03:
 			res = b - a;
 			ex = res >> 16;
 			res = res & 0xFFFF;
-			cycle = cycleA + 2;
+			cycle += 2;
 			break;
 		case 0x04:
 			res = b * a;
 			ex = res >> 16;
 			res = res & 0xFFFF;
-			cycle = cycleA + 2;
+			cycle += 2;
 			break;
 		case 0x05:
 			res = (UINT)((short int)(b) * (short int)(a));
 			ex = res >> 16;
 			res = res & 0xFFFF;
-			cycle = cycleA + 2;
+			cycle += 2;
 			break;
 		case 0x06:
 			if (a == 0)
@@ -138,7 +150,7 @@ int doL3()
 				res = (b / a) & 0xFFFF;
 				ex = (b << 16) / a;
 			}
-			cycle = cycleA + 3;
+			cycle += 3;
 			break;
 		case 0x07:
 			if (a == 0)
@@ -152,14 +164,14 @@ int doL3()
 				res = (USHORT)(sa / sb);
 				ex = (USHORT)((b * 65536) / a);
 			}
-			cycle = cycleA + 3;
+			cycle += 3;
 			break;
 		case 0x08:
 			if (a == 0)
 				res = 0;
 			else
 				res = (USHORT)(b % a);
-			cycle = cycleA + 3;
+			cycle += 3;
 			break;
 		case 0x09:
 			if (a == 0)
@@ -169,72 +181,72 @@ int doL3()
 				short int sa = (short int)(a), sb = (short int)(b);
 				res = (USHORT)(sa % sb);
 			}
-			cycle = cycleA + 3;
+			cycle += 3;
 			break;
 		case 0x0A:
 			res = b & a;
-			cycle = cycleA + 1;
+			cycle += 1;
 			break;
 		case 0x0B:
 			res = b | a;
-			cycle = cycleA + 1;
+			cycle += 1;
 			break;
 		case 0x0C:
 			res = b ^ a;
-			cycle = cycleA + 1;
+			cycle += 1;
 			break;
 		case 0x0D:
 			res = b >> a;
 			ex = (b << 16) >> a;
-			cycle = cycleA + 1;
+			cycle += 1;
 			break;
 		case 0x0E:
 			res = ((short)(b)) >> a;
 			ex = ((short)(b << 16)) >> a;
-			cycle = cycleA + 1;
+			cycle += 1;
 			break;
 		case 0x0F:
 			res = b << a;
 			ex = (b << a) >> 16;
-			cycle = cycleA + 1;
+			cycle += 1;
 			break;
 		case 0x10:
-			cycle = cycleA + 2;
+			cycle += 2;
 			if ((b&a) == 0)
 				cycle += skip();
 			break;
 		case 0x11:
-			cycle = cycleA + 2;
+			cycle += 2;
 			if ((b&a) != 0)
 				cycle += skip();
 			break;
 		case 0x12:
-			cycle = cycleA + 2;
+			cycle += 2;
 			if (b != a)
 				cycle += skip();
 			break;
 		case 0x13:
-			cycle = cycleA + 2;
+			cycle += 2;
 			if (b == a)
 				cycle += skip();
 			break;
 		case 0x14:
-			cycle = cycleA + 2;
+			cycle += 2;
 			if (b <= a)
 				cycle += skip();
 			break;
 		case 0x15:
-			cycle = cycleA + 2;
+			cycle += 2;
 			if ((short int)(b) <= (short int)(a))
 				cycle += skip();
 			break;
 		case 0x16:
-			cycle = cycleA + 2;
+			cycle += 2;
 			if (b >= a)
 				cycle += skip();
 			break;
 		case 0x17:
-			cycle = cycleA + 2;
+			cycle += 2;
 			if ((short int)(b) >= (short int)(a))
 				cycle += skip();
 			break;
@@ -242,32 +254,28 @@ int doL3()
 			res = b + a + ex;
 			ex = res >> 16;
 			res = res & 0xFFFF;
-			cycle = cycleA + 3;
+			cycle += 3;
 			break;
 		case 0x1B:
 			res = b - a + ex;
 			ex = res >> 16;
 			res = res & 0xFFFF;
-			cycle = cycleA + 3;
+			cycle += 3;
 			break;
 		case 0x1E:
 			res = a;
 			reg[6]++;
 			reg[7]++;
-			cycle = cycleA + 2;
+			cycle += 2;
 			break;
 		case 0x1F:
 			res = a;
 			reg[6]--;
 			reg[7]--;
-			cycle = cycleA + 2;
+			cycle += 2;
 			break;
 		default:
 			return -1;
-	}
-	if ((0x01 <= op && op <= 0x05) || op == 0x1A || op == 0x1B)
-	{
-		
 	}
 	if (op < 0x10 || 0x17 < op)
 		setb(ocode.b, res, cycleA);
