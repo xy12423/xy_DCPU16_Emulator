@@ -17,6 +17,8 @@ int doL1(opcode code)
 		case 0:
 			cycle = 1;
 			break;
+		default:
+			return -1;
 	}
 	return cycle;
 }
