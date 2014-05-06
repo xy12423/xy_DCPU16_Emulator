@@ -17,6 +17,8 @@ int doL1(opcode code)
 		case 0:
 			cycle = 1;
 			break;
+		default:
+			return -1;
 	}
 	return cycle;
 }
@@ -278,7 +280,7 @@ int doL3()
 			return -1;
 	}
 	if (op < 0x10 || 0x17 < op)
-		setb(ocode.b, res, cycleA);
+		setb(ocode.b, res, cycleA + cycleB);
 	return cycle;
 }
 
@@ -309,7 +311,12 @@ void doCodeThread()
 	doCodeB = true;
 	int cyclePassed = 0;
 	cycleAll = 0;
+	for (int i = 0; i < 8; i++)
+		reg[i] = 0;
 	pc = 0;
+	sp = 0;
+	ex = 0;
+	ia = 0;
 	int cycle = 0;
 	clock_t start;
 	while (doCodeB)

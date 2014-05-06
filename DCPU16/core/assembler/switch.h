@@ -374,7 +374,8 @@ int retArgNum(std::string arg, USHORT &ret1, USHORT &ret2)
 	if (arg[0] == '[')
 	{
 		arg.erase(0, 1);
-		arg.erase(arg.length() - 1, 1);
+		//arg.erase(arg.length() - 1, 1);
+		arg.pop_back();
 		if (calcStr(arg, temp) == 0)
 			arg = "0x" + toHEX((USHORT)(temp));
 		if (arg.length() < 1)

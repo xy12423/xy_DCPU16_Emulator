@@ -54,15 +54,27 @@ int assembler(std::string code, USHORT ret[], int retLen)
 		if (retop.b > 0x1F)
 		{
 			retop.b -= 0x20;
+			int dotPos = std::string::npos;
+			std::string num;
 			switch (retop.b)
 			{
 				case 0x00:
-					int dotPos = a.find(',');
+					dotPos = a.find(',');
 					codelen = 0;
 					while (dotPos != std::string::npos && codelen < retLen)
 					{
-						ret[codelen++] = toNum(a.substr(0, dotPos));
+						num = a.substr(0, dotPos);
 						a.erase(0, dotPos + 1);
+						if (canBeNum(num))
+							ret[codelen++] = toNum(num);
+						else if (num.front() == '[' && num.back() == ']')
+						{
+							num.erase(0, 1);
+							//num.erase(num.length() - 1, 1);
+							num.pop_back();
+							for (int i = toNum(num); i > 0 && codelen < retLen; i--)
+								ret[codelen++] = 0;
+						}
 						dotPos = a.find(',');
 					}
 					ret[codelen++] = toNum(a);
