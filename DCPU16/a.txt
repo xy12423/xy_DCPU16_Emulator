@@ -1,4 +1,0 @@
-shit:
-set pc,fuck
-fuck:
-set pc,shit
