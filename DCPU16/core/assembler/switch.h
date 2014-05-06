@@ -7,7 +7,7 @@
 
 int retOpNum2(std::string op, USHORT &ret)
 {
-	switch (op[0])
+	switch (op.front())
 	{
 		case 'd':
 			if (op[1] == 'a' && op[2] == 't')
@@ -68,7 +68,7 @@ int retOpNum2(std::string op, USHORT &ret)
 
 int retOpNum3(std::string op, USHORT &ret)
 {
-	switch (op[0])
+	switch (op.front())
 	{
 		case 'a':
 			switch (op[1])
@@ -315,7 +315,7 @@ int retOpStr3(USHORT op, std::string &ret)
 
 int retGRegNum(std::string reg, USHORT &ret)
 {
-	switch (reg[0])
+	switch (reg.front())
 	{
 		case 'a':
 			ret = 0x00;
@@ -371,7 +371,7 @@ int retArgNum(std::string arg, USHORT &ret1, USHORT &ret2)
 {
 	int inslen = 1;
 	long long temp = 0;
-	if (arg[0] == '[')
+	if (arg.front() == '[')
 	{
 		arg.erase(0, 1);
 		//arg.erase(arg.length() - 1, 1);
@@ -418,7 +418,13 @@ int retArgNum(std::string arg, USHORT &ret1, USHORT &ret2)
 					return _ERR_ASM_ILLEGAL_ARG;
 			}
 			ret2 = (USHORT)toNum(shift);
-			inslen = 2;
+			if (ret2 == 0)
+			{
+				ret1 -= 0x08;
+				inslen = 1;
+			}
+			else
+				inslen = 2;
 		}
 		else if (canBeNum(arg))
 		{
@@ -480,7 +486,7 @@ int retArgNum(std::string arg, USHORT &ret1, USHORT &ret2)
 				else
 					return _ERR_ASM_ILLEGAL_ARG;
 			}
-			else if (arglen == 4 && arg[0] == 'p')
+			else if (arglen == 4 && arg.front() == 'p')
 			{
 				if (arg == "push")
 					ret1 = 0x18;
