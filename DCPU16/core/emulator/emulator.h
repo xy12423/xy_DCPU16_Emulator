@@ -308,7 +308,6 @@ volatile bool doCodeB;
 volatile int cycleAll = 0;
 void doCodeThread()
 {
-	doCodeB = true;
 	int cyclePassed = 0;
 	cycleAll = 0;
 	for (int i = 0; i < 8; i++)

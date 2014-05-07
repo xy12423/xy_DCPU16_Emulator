@@ -7,15 +7,33 @@ using namespace std;
 USHORT m_ret[INS_RET_LEN];
 string m_arg[INS_RET_LEN];
 
-#ifndef __CPP11_thread
 #ifdef _P_WIN
 DWORD threadID = 0;
-DWORD WINAPI doCodeThreadStarter(LPVOID lpParam)
+DWORD WINAPI doCodeThreadBegin(LPVOID lpParam)
 {
 	doCodeThread();
+	return 0;
 }
 #endif
+
+void doCodeThreadStarter()
+{
+	doCodeB = true;
+#ifdef _P_WIN
+	CreateThread(NULL, 0, &doCodeThreadBegin, NULL, 0, &threadID);
 #endif
+#ifdef _P_LIN
+	pthread_attr_init(&attr);
+	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+	pthread_create(&tid, &attr, &doCodeThread, NULL);
+#endif
+#ifdef _P_NA
+#ifdef __CPP11_thread
+	thread em(doCodeThread);
+	em.detach();
+#endif
+#endif
+}
 
 #ifdef _P_WIN
 DWORD_PTR zero = 0;
@@ -28,8 +46,8 @@ void CALLBACK timer(UINT uTimerID, UINT uMsg, DWORD_PTR dwUser, DWORD_PTR dw1, D
 }
 #endif
 #ifdef _P_LIN
-#include <ctime>
-#include <sys/time.h>
+pthread_attr_t attr;
+pthread_t tid;
 void timer()
 {
 	while (doCodeB)
@@ -40,6 +58,9 @@ void timer()
 }
 #endif
 #ifdef _P_NA
+#ifdef __CPP11_thread
+
+#endif
 #include <ctime>
 #if CLOCKS_PER_SEC < 1000
 #error You need a better clock
@@ -61,7 +82,10 @@ void clockStarter()
 #ifdef _P_WIN
 	timerH = timeSetEvent(1, 1, timer, zero, TIME_PERIODIC);
 #endif
-#if defined(_P_LIN) || defined (_P_NA)
+#ifdef _P_LIN
+	pthread_create(&tid, &attr, &timer, NULL);
+#endif
+#ifdef _P_NA
 	thread tmr(timer);
 	tmr.detach();
 #endif
@@ -236,14 +260,7 @@ void trace(string arg = "")
 
 void proceed()
 {
-#ifdef __CPP11_thread
-	thread em(doCodeThread);
-	em.detach();
-#else
-#ifdef _P_WIN
-	CreateThread(NULL, 0, &doCodeThreadStarter, NULL, 0, &threadID);
-#endif
-#endif
+	doCodeThreadStarter();
 	clockStarter();
 	getchar();
 	doCodeB = false;
@@ -710,7 +727,6 @@ int main(int argc, char* argv[], char* envp[])
 		}
 		else
 			logout << "Failed to load plugin " << filename << endl;
-		delete fname;
 #endif
 #ifdef _P_LIN
 		void *plugin = NULL;
@@ -735,6 +751,7 @@ int main(int argc, char* argv[], char* envp[])
 			}
 		}
 		bool loadSuccess = true;
+		voidFunc hd;
 		for (i = 0; i < FUNC_COUNT; i++)
 		{
 			hd = dlsym(plugin, funcName[i]);
@@ -757,6 +774,7 @@ int main(int argc, char* argv[], char* envp[])
 			((fSetHandle)(*funcAdd[2]))(&setMem, &getMem, &setReg, &getReg, &additr);
 		}
 #endif
+		delete fname;
 	}
 	return mainLoop();
 }

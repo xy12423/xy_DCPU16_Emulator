@@ -19,28 +19,6 @@
 #endif
 //*/
 
-#ifdef _MSC_VER
-#if _MSC_VER >= 1700
-#ifndef __CPP11_thread
-#define __CPP11_thread
-#endif
-#endif
-#endif
-
-#ifdef __GNUC__
-#if __GNUC__ > 4 && __GNUC_MINOR__ > 8
-#ifndef __CPP11_thread
-#define __CPP11_thread
-#endif
-#endif
-#endif
-
-#if __cplusplus >= 201103L || defined(__CPP11_thread)
-#include <thread>
-#else
-#error You need a compiler supports C++11->thread
-#endif
-
 #ifdef _WIN32
 #define _P_WIN
 #else
@@ -58,8 +36,40 @@
 #endif
 #ifdef _P_LIN
 #include <dlfcn.h>
+#include <pthread.h>
+#pragma comment(lib, "libpthread.a")
+#include <ctime>
+#include <sys/time.h>
 #endif
 #ifdef _P_NA
+#ifdef _MSC_VER
+#if _MSC_VER >= 1700
+#ifndef __CPP11_thread
+#define __CPP11_thread
+#endif
+#endif
+#endif
+
+#ifdef __GNUC__
+#if __GNUC__ > 4 && __GNUC_MINOR__ > 8
+#ifndef __CPP11_thread
+#define __CPP11_thread
+#endif
+#endif
+#endif
+
+#if __cplusplus >= 201103L
+#ifndef __CPP11_thread
+#define __CPP11_thread
+#endif
+#endif
+
+#ifdef __CPP11_thread
+#include <thread>
+#else
+#error You need a compiler supports C++11->thread
+#endif
+
 #error Your platform is not supported
 #endif
 
