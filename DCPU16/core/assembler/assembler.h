@@ -77,7 +77,16 @@ int assembler(std::string code, USHORT ret[], int retLen)
 						}
 						dotPos = a.find(',');
 					}
-					ret[codelen++] = toNum(a);
+					if (canBeNum(a))
+						ret[codelen++] = toNum(a);
+					else if (a.front() == '[' && a.back() == ']')
+					{
+						a.erase(0, 1);
+						//num.erase(num.length() - 1, 1);
+						a.pop_back();
+						for (int i = toNum(a); i > 0 && codelen < retLen; i--)
+							ret[codelen++] = 0;
+					}
 					setRetOP = false;
 					break;
 			}

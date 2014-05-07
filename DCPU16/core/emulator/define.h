@@ -58,5 +58,7 @@ bool itri = true;
 hardware hwt[65536];
 UINT hwn = 0;
 
+#include <cstring>
+#include <ctime>
 
 #endif
