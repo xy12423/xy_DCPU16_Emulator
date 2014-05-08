@@ -225,6 +225,7 @@ int assembler(std::string code, USHORT ret[], int retLen)
 					setRetOP = false;
 					break;
 				case 0x02:
+					codelen = 0;
 					retop.op = 0x02;
 					retop.b = 0x1B;
 					retcode = retArgNum(b, retop.a, nw);
