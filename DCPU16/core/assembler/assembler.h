@@ -231,7 +231,7 @@ int assembler(std::string code, USHORT ret[], int retLen)
 					retcode = retArgNum(b, retop.a, nw);
 					if (retcode < 0)
 						return retcode;
-					else if (retop.a > 0)
+					else if (retop.a != 0x21)
 					{
 						ret[codelen++] = OP2US(retop);
 						if (retcode == 2)
