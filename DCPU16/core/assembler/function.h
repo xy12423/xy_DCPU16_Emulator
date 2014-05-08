@@ -10,7 +10,7 @@ void ltrim(std::string &str)
 {
 	int len = str.length();
 	int i;
-	for (i = 0; i < len;i++)
+	for (i = 0; i < len; i++)
 		if (str[i] != ' ' && str[i] != '\t')
 			break;
 	str.erase(0, i);
@@ -48,15 +48,15 @@ void ucase(std::string &str)
 		str[i] = toupper(str[i]);
 }
 
-int numLevel[] = { 
-3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 
-3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 3, 3, 3, 3, 3, 3, 
-3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 
-3, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 
-3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 
-3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 
-3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 
-3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3
+int numLevel[] = {
+	3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+	3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 3, 3, 3, 3, 3, 3,
+	3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+	3, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+	3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+	3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+	3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+	3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3
 };
 
 bool canBeNum(std::string str)
@@ -65,7 +65,7 @@ bool canBeNum(std::string str)
 	if (len == 0)
 		return false;
 	lcase(str);
-	if (str[0] == '0' && len > 1)
+	if (str.front() == '0' && len > 1)
 	{
 		if (len > 2 && str[1] == 'x')
 		{
@@ -80,6 +80,8 @@ bool canBeNum(std::string str)
 			len--;
 		}
 	}
+	else if (str.front() == '\'' && str.back() == '\'')
+		return str.length() == 3;
 	else if (str[len - 1] == 'h')
 	{
 		level = 2;
@@ -94,70 +96,66 @@ bool canBeNum(std::string str)
 	return true;
 }
 
-int toNum(std::string str, int type = 3)
+int toNum(std::string str, int type = 0)
 {
 	int ret = INT_MIN, len = str.length();
 	if (len < 1)
-		return 0;
+		return INT_MIN;
 	std::stringstream ss;
-	if (str[len - 1] == 'h')
+	switch (type)
 	{
-		str.erase(len - 1, 1);
-		ss << std::hex << str;
-		ss >> ret;
-		//sscanf(str.c_str(), "%x", &ret);
-	}
-	else
-	{
-		switch (type)
-		{
-			case 3:
-				//sscanf(str.c_str(), "%i", &ret);
-				if (len == 0)
-					return false;
-				if (str[0] == '0' && len > 1)
+		case 0:
+			if (len == 0)
+				return INT_MIN;
+			if (str.front() == '0' && len > 1)
+			{
+				if (len > 2 && str[1] == 'x')
 				{
-					if (len > 2 && str[1] == 'x')
-					{
-						str.erase(0, 2);
-						ss << std::hex << str;
-						ss >> ret;
-					}
-					else
-					{
-						str.erase(0, 1);
-						ss << std::oct << str;
-						ss >> ret;
-					}
-				}
-				else if (str[len - 1] == 'h')
-				{
-					str.erase(len - 1, 1);
+					str.erase(0, 2);
 					ss << std::hex << str;
 					ss >> ret;
 				}
 				else
 				{
-					ss << std::dec << str;
+					str.erase(0, 1);
+					ss << std::oct << str;
 					ss >> ret;
 				}
-				break;
-			case 2:
-				//sscanf(str.c_str(), "%x", &ret);
+			}
+			else if (str.front() == '\'' && str.back() == '\'')
+			{
+				if (str.length() == 3)
+					ret = (int)(str[1]);
+			}
+			else if (str[len - 1] == 'h')
+			{
+				str.erase(len - 1, 1);
 				ss << std::hex << str;
 				ss >> ret;
-				break;
-			case 1:
-				//sscanf(str.c_str(), "%d", &ret);
+			}
+			else
+			{
 				ss << std::dec << str;
 				ss >> ret;
-				break;
-			case 0:
-				//sscanf(str.c_str(), "%o", &ret);
-				ss << std::oct << str;
-				ss >> ret;
-				break;
-		}
+			}
+			break;
+		case 4:
+			if (str.front() == '\'' && str.back() == '\'')
+				str.erase(0, 1);
+			ret = (int)(str[0]);
+			break;
+		case 3:
+			ss << std::hex << str;
+			ss >> ret;
+			break;
+		case 2:
+			ss << std::dec << str;
+			ss >> ret;
+			break;
+		case 1:
+			ss << std::oct << str;
+			ss >> ret;
+			break;
 	}
 	return ret;
 }
@@ -174,10 +172,10 @@ std::string toHEX(unsigned int n)
 	return ret;
 }
 
-int opLv[128] = { 
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 1, 0, 1, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 
+int opLv[128] = {
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 1, 0, 1, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 };
 

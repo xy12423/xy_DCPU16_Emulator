@@ -70,10 +70,17 @@ int assembler(std::string code, USHORT ret[], int retLen)
 						else if (num.front() == '[' && num.back() == ']')
 						{
 							num.erase(0, 1);
-							//num.erase(num.length() - 1, 1);
 							num.pop_back();
 							for (int i = toNum(num); i > 0 && codelen < retLen; i--)
 								ret[codelen++] = 0;
+						}
+						else if (num.front() == '"' && num.back() == '"')
+						{
+							num.erase(0, 1);
+							num.pop_back();
+							std::string::const_iterator p = num.cbegin();
+							for (int i = num.length(); i > 0 && codelen < retLen; i--, p++)
+								ret[codelen++] = *p;
 						}
 						dotPos = a.find(',');
 					}
@@ -82,10 +89,17 @@ int assembler(std::string code, USHORT ret[], int retLen)
 					else if (a.front() == '[' && a.back() == ']')
 					{
 						a.erase(0, 1);
-						//num.erase(num.length() - 1, 1);
 						a.pop_back();
 						for (int i = toNum(a); i > 0 && codelen < retLen; i--)
 							ret[codelen++] = 0;
+					}
+					else if (a.front() == '"' && a.back() == '"')
+					{
+						a.erase(0, 1);
+						a.pop_back();
+						std::string::const_iterator p = a.cbegin();
+						for (int i = a.length(); i > 0 && codelen < retLen; i--, p++)
+							ret[codelen++] = *p;
 					}
 					setRetOP = false;
 					break;
