@@ -65,7 +65,13 @@ bool canBeNum(std::string str)
 	if (len == 0)
 		return false;
 	lcase(str);
-	if (str.front() == '0' && len > 1)
+	if (str[len - 1] == 'h')
+	{
+		level = 2;
+		str.erase(len - 1, 1);
+		len--;
+	}
+	else if (str.front() == '0' && len > 1)
 	{
 		if (len > 2 && str[1] == 'x')
 		{
@@ -82,14 +88,10 @@ bool canBeNum(std::string str)
 	}
 	else if (str.front() == '\'' && str.back() == '\'')
 		return str.length() == 3;
-	else if (str[len - 1] == 'h')
-	{
-		level = 2;
-		str.erase(len - 1, 1);
-		len--;
-	}
 	else
 		level = 1;
+	if (len < 1)
+		return false;
 	for (int i = 0; i < len; i++)
 		if (numLevel[(BYTE)(str[i])] > level)
 			return false;
@@ -107,7 +109,13 @@ int toNum(std::string str, int type = 0)
 		case 0:
 			if (len == 0)
 				return INT_MIN;
-			if (str.front() == '0' && len > 1)
+			if (str[len - 1] == 'h')
+			{
+				str.erase(len - 1, 1);
+				ss << std::hex << str;
+				ss >> ret;
+			}
+			else if (str.front() == '0' && len > 1)
 			{
 				if (len > 2 && str[1] == 'x')
 				{
@@ -126,12 +134,6 @@ int toNum(std::string str, int type = 0)
 			{
 				if (str.length() == 3)
 					ret = (int)(str[1]);
-			}
-			else if (str[len - 1] == 'h')
-			{
-				str.erase(len - 1, 1);
-				ss << std::hex << str;
-				ss >> ret;
 			}
 			else
 			{
