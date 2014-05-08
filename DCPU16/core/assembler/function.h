@@ -4,7 +4,7 @@
 #define _H_ASM_FU
 
 #include "define.h"
-#include <limits.h>
+#include <climits>
 
 void ltrim(std::string &str)
 {

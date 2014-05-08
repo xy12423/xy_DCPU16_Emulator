@@ -81,9 +81,9 @@ int assembler(std::string code, USHORT ret[], int retLen)
 		if (retop.b > 0x1F)
 		{
 			retop.b -= 0x20;
-			int dotPos = std::string::npos;
 			std::list<std::string> *datList;
 			std::list<std::string>::iterator pItr, pEnd;
+			USHORT nw = 0;
 			switch (retop.b)
 			{
 				case 0x00:
@@ -113,6 +113,50 @@ int assembler(std::string code, USHORT ret[], int retLen)
 					setRetOP = false;
 					delete datList;
 					break;
+				case 0x01:
+					codelen = 0;
+					ret[codelen++] = 0x0301;
+					ret[codelen++] = 0x0701;
+					ret[codelen++] = 0x0B01;
+					ret[codelen++] = 0x0F01;
+					ret[codelen++] = 0x1301;
+					ret[codelen++] = 0x1701;
+					ret[codelen++] = 0x1B01;
+					ret[codelen++] = 0x1F01;
+					retop.op = 0x00;
+					retop.b = 0x01;
+					retcode = retArgNum(a, retop.a, nw);
+					if (retcode < 0)
+						return retcode;
+					else
+					{
+						ret[codelen++] = OP2US(retop);
+						if (retcode == 2)
+							ret[codelen++] = nw;
+					}
+					setRetOP = false;
+					break;
+				case 0x02:
+					retop.op = 0x02;
+					retop.b = 0x1B;
+					retcode = retArgNum(a, retop.a, nw);
+					if (retcode < 0)
+						return retcode;
+					else
+					{
+						ret[codelen++] = OP2US(retop);
+						if (retcode == 2)
+							ret[codelen++] = nw;
+					}
+					ret[codelen++] = 0x60E1;
+					ret[codelen++] = 0x60C1;
+					ret[codelen++] = 0x60A1;
+					ret[codelen++] = 0x6081;
+					ret[codelen++] = 0x6061;
+					ret[codelen++] = 0x6041;
+					ret[codelen++] = 0x6021;
+					ret[codelen++] = 0x6001;
+					break;
 			}
 		}
 		else
@@ -130,19 +174,72 @@ int assembler(std::string code, USHORT ret[], int retLen)
 		int retcode = retOpNum3(op, retop.op);
 		if (retcode != _ERR_ASM_NOERR)
 			return retcode;
-		USHORT nw = 0;
-		retcode = retArgNum(b, retop.b, nw);
-		if (retcode < 0)
-			return retcode;
-		else if (retcode == 2)
-			ret[codelen++] = nw;
-		nw = 0;
-		retcode = retArgNum(a, retop.a, nw);
-		if (retcode < 0)
-			return retcode;
-		else if (retcode == 2)
-			ret[codelen++] = nw;
-		
+		if (retop.op > 0x1F)
+		{
+			retop.op -= 0x20;
+			USHORT nw = 0;
+			std::list<std::string> *argList;
+			std::list<std::string>::iterator pItr, pEnd;
+			switch (retop.op)
+			{
+				case 0x01:
+					codelen = 0;
+					ret[codelen++] = 0x0301;
+					ret[codelen++] = 0x0701;
+					ret[codelen++] = 0x0B01;
+					ret[codelen++] = 0x0F01;
+					ret[codelen++] = 0x1301;
+					ret[codelen++] = 0x1701;
+					ret[codelen++] = 0x1B01;
+					ret[codelen++] = 0x1F01;
+					argList = divideStr(a, ',');
+					argList->reverse();
+					pEnd = argList->end();
+					retop.op = 0x01;
+					retop.b = 0x18;
+					for (pItr = argList->begin(); pItr != pEnd; pItr++)
+					{
+						retcode = retArgNum(*pItr, retop.a, nw);
+						if (retcode < 0)
+							return retcode;
+						else
+						{
+							ret[codelen++] = OP2US(retop);
+							if (retcode == 2)
+								ret[codelen++] = nw;
+						}
+					}
+					delete argList;
+					retop.op = 0x00;
+					retop.b = 0x01;
+					retcode = retArgNum(b, retop.a, nw);
+					if (retcode < 0)
+						return retcode;
+					else
+					{
+						ret[codelen++] = OP2US(retop);
+						if (retcode == 2)
+							ret[codelen++] = nw;
+					}
+					setRetOP = false;
+					break;
+			}
+		}
+		else
+		{
+			USHORT nw = 0;
+			retcode = retArgNum(b, retop.b, nw);
+			if (retcode < 0)
+				return retcode;
+			else if (retcode == 2)
+				ret[codelen++] = nw;
+			nw = 0;
+			retcode = retArgNum(a, retop.a, nw);
+			if (retcode < 0)
+				return retcode;
+			else if (retcode == 2)
+				ret[codelen++] = nw;
+		}
 	}
 	if (setRetOP)
 		ret[0] = OP2US(retop);
