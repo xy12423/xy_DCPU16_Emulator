@@ -97,7 +97,7 @@ void assm(string arg)
 	char in[50];
 	string ins;
 	if (arg != "")
-		add = toNum(arg, 2);
+		add = toNum(arg, 3);
 	while (true)
 	{
 		printf("%04X:", add);
@@ -128,7 +128,7 @@ void unasm(string arg)
 {
 	static USHORT add = 0;
 	if (arg != "")
-		add = toNum(arg, 3);
+		add = toNum(arg);
 	USHORT end = add + 0x40;
 	string ins("");
 	for (; add < end; )
@@ -145,7 +145,7 @@ void dump(string arg)
 {
 	static UINT add = 0;
 	if (arg != "")
-		add = toNum(arg, 3);
+		add = toNum(arg);
 	int i, j;
 	for (i = 0; i < 8; i++)
 	{
@@ -173,9 +173,9 @@ void enter(int argc, string args[])
 		cout << "  ^ Error" << endl;
 		return;
 	}
-	UINT add = toNum(args[0], 3);
+	UINT add = toNum(args[0]);
 	for (int i = 1; i < argc && add < 0x10000; i++)
-		mem[add++] = toNum(args[i], 3);
+		mem[add++] = toNum(args[i]);
 	return;
 }
 
@@ -244,7 +244,7 @@ void trace(string arg = "")
 	UINT endAt = pc;
 	if (arg != "")
 	{
-		endAt = toNum(arg, 2);
+		endAt = toNum(arg, 3);
 		haveArg = true;
 	}
 	string ins;
@@ -298,7 +298,7 @@ struct label
 		return str.length() > n.str.length();
 	}
 };
-typedef list<label> stringList;
+typedef list<label> labelList;
 
 int m[65536];
 bool joined[65536];
@@ -319,13 +319,13 @@ void generate(string path, string arg = "")
 	USHORT sysLblCount = 0;
 	string sysLabel;
 
-	stringList lblLst;
+	labelList lblLst;
 	pendList pendLst;
 	string lbl;
 	int pendCount = 0;
-	stringList::iterator lblBeg, lblItr, lblEnd;
-	list<stringList::iterator> lblUsedLst;
-	list<stringList::iterator>::const_iterator usedItr, usedEnd;
+	labelList::iterator lblBeg, lblItr, lblEnd;
+	list<labelList::iterator> lblUsedLst;
+	list<labelList::iterator>::const_iterator usedItr, usedEnd;
 	pendItem pendItm;
 
 	USHORT add = toNum(arg);

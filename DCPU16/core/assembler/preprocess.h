@@ -9,10 +9,6 @@ void preprcs(std::string &op, std::string &b, std::string &a)
 {
 	switch (op.front())
 	{
-		case 'm':
-			if (op == "mov")
-				op = "set";
-			break;
 		case 'd':
 			if (op == "dat")
 			{
@@ -22,6 +18,10 @@ void preprcs(std::string &op, std::string &b, std::string &a)
 					b = "";
 				}
 			}
+			break;
+		case 'm':
+			if (op == "mov")
+				op = "set";
 			break;
 		case 'p':
 			if (op == "pop")

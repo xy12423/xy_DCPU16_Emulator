@@ -11,6 +11,7 @@
 #define _ERR_ASM_ILLEGAL -2
 #define _ERR_ASM_ILLEGAL_OP -3
 #define _ERR_ASM_ILLEGAL_ARG -4
+#define _ERR_ASM_TOO_LONG -5
 
 typedef unsigned char BYTE;
 

@@ -5,12 +5,24 @@
 
 #include "define.h"
 
+int retOpNum1(std::string op, USHORT &ret)
+{
+
+	return _ERR_ASM_ILLEGAL_OP;
+}
+
 int retOpNum2(std::string op, USHORT &ret)
 {
 	switch (op.front())
 	{
+		case 'c':
+			if (op == "call")
+				ret = 0x21;
+			else
+				return _ERR_ASM_ILLEGAL_OP;
+			break;
 		case 'd':
-			if (op[1] == 'a' && op[2] == 't')
+			if (op == "dat")
 				ret = 0x20;
 			else
 				return _ERR_ASM_ILLEGAL_OP;
@@ -49,14 +61,16 @@ int retOpNum2(std::string op, USHORT &ret)
 				return _ERR_ASM_ILLEGAL_OP;
 			break;
 		case 'j':
-			if (op[1] == 's' && op[2] == 'r')
+			if (op == "jsr")
 				ret = 0x01;
 			else
 				return _ERR_ASM_ILLEGAL_OP;
 			break;
 		case 'r':
-			if (op[1] == 'f' && op[2] == 'i')
+			if (op == "rfi")
 				ret = 0x0B;
+			else if (op == "ret")
+				ret = 0x22;
 			else
 				return _ERR_ASM_ILLEGAL_OP;
 			break;
@@ -98,15 +112,21 @@ int retOpNum3(std::string op, USHORT &ret)
 			}
 			break;
 		case 'b':
-			if (op[1] == 'o' && op[2] == 'r')
+			if (op == "bor")
 				ret = 0x0B;
 			else
 				return _ERR_ASM_ILLEGAL_OP;
 			break;
+		case 'c':
+			if (op == "call")
+				ret = 0x21;
+			else
+				return _ERR_ASM_ILLEGAL_OP;
+			break;
 		case 'd':
-			if (op[1] == 'i' && op[2] == 'v')
+			if (op == "div")
 				ret = 0x06;
-			else if (op[1] == 'v' && op[2] == 'i')
+			else if (op == "dvi")
 				ret = 0x07;
 			else
 				return _ERR_ASM_ILLEGAL_OP;
@@ -148,14 +168,20 @@ int retOpNum3(std::string op, USHORT &ret)
 				return _ERR_ASM_ILLEGAL_OP;
 			break;
 		case 'm':
-			if (op[1] == 'd' && op[2] == 'i')
+			if (op == "mdi")
 				ret = 0x09;
-			else if (op[1] == 'l' && op[2] == 'i')
+			else if (op == "mli")
 				ret = 0x05;
-			else if (op[1] == 'o' && op[2] == 'd')
+			else if (op == "mod")
 				ret = 0x08;
-			else if (op[1] == 'u' && op[2] == 'l')
+			else if (op == "mul")
 				ret = 0x04;
+			else
+				return _ERR_ASM_ILLEGAL_OP;
+			break;
+		case 'r':
+			if (op == "ret")
+				ret = 0x22;
 			else
 				return _ERR_ASM_ILLEGAL_OP;
 			break;
@@ -348,14 +374,14 @@ int retGRegNum(std::string reg, USHORT &ret)
 }
 
 std::string gReg[] = {
-	std::string("a"),
-	std::string("b"),
-	std::string("c"),
-	std::string("x"),
-	std::string("y"),
-	std::string("z"),
-	std::string("i"),
-	std::string("j")
+	std::string("A"),
+	std::string("B"),
+	std::string("C"),
+	std::string("X"),
+	std::string("Y"),
+	std::string("Z"),
+	std::string("I"),
+	std::string("J")
 };
 
 int retGRegStr(USHORT reg, std::string &ret)
@@ -371,6 +397,8 @@ int retArgNum(std::string arg, USHORT &ret1, USHORT &ret2)
 {
 	int inslen = 1;
 	long long temp = 0;
+	if (arg.length() < 1)
+		return _ERR_ASM_ILLEGAL;
 	if (arg.front() == '[')
 	{
 		arg.erase(0, 1);
@@ -388,7 +416,7 @@ int retArgNum(std::string arg, USHORT &ret1, USHORT &ret2)
 			std::string reg = arg.substr(0, plusPos);
 			std::string shift = arg.substr(plusPos + 1);
 			bool again = true;
-		_ran_begin:
+		_ran_begin_1:
 			if (reg == "sp")
 				ret1 = 0x1A;
 			else
@@ -399,7 +427,7 @@ int retArgNum(std::string arg, USHORT &ret1, USHORT &ret2)
 					{
 						swap(reg, shift);
 						again = false;
-						goto _ran_begin;
+						goto _ran_begin_1;
 					}
 					else
 						return _ERR_ASM_ILLEGAL_ARG;
@@ -412,7 +440,7 @@ int retArgNum(std::string arg, USHORT &ret1, USHORT &ret2)
 				{
 					swap(reg, shift);
 					again = false;
-					goto _ran_begin;
+					goto _ran_begin_1;
 				}
 				else
 					return _ERR_ASM_ILLEGAL_ARG;
@@ -532,25 +560,25 @@ int retArgStr(USHORT arg1, USHORT arg2, bool isB, std::string &ret)
 		{
 			case 0x18:
 				if (isB)
-					ret = "push";
+					ret = "PUSH";
 				else
-					ret = "pop";
+					ret = "POP";
 				break;
 			case 0x19:
-				ret = "peek";
+				ret = "PEEK";
 				break;
 			case 0x1A:
-				ret = "pick " + toHEX(arg2);
+				ret = "PICK " + toHEX(arg2);
 				inc = 1;
 				break;
 			case 0x1B:
-				ret = "sp";
+				ret = "SP";
 				break;
 			case 0x1C:
-				ret = "pc";
+				ret = "PC";
 				break;
 			case 0x1D:
-				ret = "ex";
+				ret = "EX";
 				break;
 			case 0x1E:
 				ret = "[" + toHEX(arg2) + "]";
