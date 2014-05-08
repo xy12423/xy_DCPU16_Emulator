@@ -15,6 +15,33 @@ int assembler(std::string code, USHORT ret[], int retLen)
 {
 	trim(code);
 	lcase(code);
+	{
+		std::list<std::string> *cmdList = divideStr(code, ';');
+		if (cmdList->size() > 1)
+		{
+			std::list<std::string>::const_iterator p, pEnd = cmdList->cend();
+			USHORT *tRet = new USHORT[65536];
+			int codeLen = 0, retCode = 0, i;
+			for (p = cmdList->cbegin(); p != pEnd; p++)
+			{
+				retCode = assembler(*p, tRet, 65536);
+				if (retCode < 1)
+					return retCode;
+				for (i = 0; i < retCode && codeLen < retLen; i++)
+					ret[codeLen++] = tRet[i];
+				if (codeLen > retLen)
+				{
+					delete tRet;
+					delete cmdList;
+					return _ERR_ASM_TOO_LONG;
+				}
+			}
+			delete tRet;
+			delete cmdList;
+			return codeLen;
+		}
+		delete cmdList;
+	}
 	opcode retop;
 	retop.op = 0;
 	retop.b = 0;
@@ -55,53 +82,36 @@ int assembler(std::string code, USHORT ret[], int retLen)
 		{
 			retop.b -= 0x20;
 			int dotPos = std::string::npos;
-			std::string num;
+			std::list<std::string> *datList;
+			std::list<std::string>::iterator pItr, pEnd;
 			switch (retop.b)
 			{
 				case 0x00:
-					dotPos = a.find(',');
+					datList = divideStr(a, ',');
 					codelen = 0;
-					while (dotPos != std::string::npos && codelen < retLen)
+					pEnd = datList->end();
+					for (pItr = datList->begin(); pItr != pEnd; pItr++)
 					{
-						num = a.substr(0, dotPos);
-						a.erase(0, dotPos + 1);
-						if (canBeNum(num))
-							ret[codelen++] = toNum(num);
-						else if (num.front() == '[' && num.back() == ']')
+						if (canBeNum(*pItr))
+							ret[codelen++] = toNum(*pItr);
+						else if (pItr->front() == '[' && pItr->back() == ']')
 						{
-							num.erase(0, 1);
-							num.pop_back();
-							for (int i = toNum(num); i > 0 && codelen < retLen; i--)
+							pItr->erase(0, 1);
+							pItr->pop_back();
+							for (int i = toNum(*pItr); i > 0 && codelen < retLen; i--)
 								ret[codelen++] = 0;
 						}
-						else if (num.front() == '"' && num.back() == '"')
+						else if (pItr->front() == '"' && pItr->back() == '"')
 						{
-							num.erase(0, 1);
-							num.pop_back();
-							std::string::const_iterator p = num.cbegin();
-							for (int i = num.length(); i > 0 && codelen < retLen; i--, p++)
+							pItr->erase(0, 1);
+							pItr->pop_back();
+							std::string::const_iterator p = pItr->cbegin();
+							for (int i = pItr->length(); i > 0 && codelen < retLen; i--, p++)
 								ret[codelen++] = *p;
 						}
-						dotPos = a.find(',');
-					}
-					if (canBeNum(a))
-						ret[codelen++] = toNum(a);
-					else if (a.front() == '[' && a.back() == ']')
-					{
-						a.erase(0, 1);
-						a.pop_back();
-						for (int i = toNum(a); i > 0 && codelen < retLen; i--)
-							ret[codelen++] = 0;
-					}
-					else if (a.front() == '"' && a.back() == '"')
-					{
-						a.erase(0, 1);
-						a.pop_back();
-						std::string::const_iterator p = a.cbegin();
-						for (int i = a.length(); i > 0 && codelen < retLen; i--, p++)
-							ret[codelen++] = *p;
 					}
 					setRetOP = false;
+					delete datList;
 					break;
 			}
 		}

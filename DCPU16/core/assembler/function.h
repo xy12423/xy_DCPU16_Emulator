@@ -307,4 +307,18 @@ int calcStr(std::string str, long long &ret)
 	return 0;
 }
 
+std::list<std::string>* divideStr(std::string str, char sep)
+{
+	std::list<std::string> *ret = new std::list<std::string>;
+	int dotPos = str.find(sep);
+	while (dotPos != std::string::npos)
+	{
+		ret->push_back(str.substr(0, dotPos));
+		str.erase(0, dotPos + 1);
+		dotPos = str.find(sep);
+	}
+	ret->push_back(str);
+	return ret;
+}
+
 #endif
