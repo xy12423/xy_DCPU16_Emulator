@@ -142,7 +142,7 @@ int assembler(std::string code, USHORT ret[], int retLen)
 					retcode = retArgNum(a, retop.a, nw);
 					if (retcode < 0)
 						return retcode;
-					else
+					else if(retop.a > 0)
 					{
 						ret[codelen++] = OP2US(retop);
 						if (retcode == 2)
@@ -156,6 +156,7 @@ int assembler(std::string code, USHORT ret[], int retLen)
 					ret[codelen++] = 0x6041;
 					ret[codelen++] = 0x6021;
 					ret[codelen++] = 0x6001;
+					ret[codelen++] = 0x6381;
 					break;
 			}
 		}
@@ -221,6 +222,45 @@ int assembler(std::string code, USHORT ret[], int retLen)
 						if (retcode == 2)
 							ret[codelen++] = nw;
 					}
+					setRetOP = false;
+					break;
+				case 0x02:
+					retop.op = 0x02;
+					retop.b = 0x1B;
+					retcode = retArgNum(b, retop.a, nw);
+					if (retcode < 0)
+						return retcode;
+					else if (retop.a > 0)
+					{
+						ret[codelen++] = OP2US(retop);
+						if (retcode == 2)
+							ret[codelen++] = nw;
+					}
+					retop.op = 0x01;
+					retop.b = 0x18;
+					retcode = retArgNum(a, retop.a, nw);
+					if (retcode < 0)
+						return retcode;
+					else if (retop.a > 0)
+					{
+						ret[codelen++] = OP2US(retop);
+						if (retcode == 2)
+							ret[codelen++] = nw;
+					}
+					ret[codelen++] = 0x8B62;
+					ret[codelen++] = 0x60E1;
+					ret[codelen++] = 0x60C1;
+					ret[codelen++] = 0x60A1;
+					ret[codelen++] = 0x6081;
+					ret[codelen++] = 0x6061;
+					ret[codelen++] = 0x6041;
+					ret[codelen++] = 0x6021;
+					ret[codelen++] = 0x6001;
+					ret[codelen++] = 0x6701;
+					ret[codelen++] = 0x6B41;
+					ret[codelen++] = 0x0001;
+					ret[codelen++] = 0xFFF8;
+					ret[codelen++] = 0x6381;
 					setRetOP = false;
 					break;
 			}

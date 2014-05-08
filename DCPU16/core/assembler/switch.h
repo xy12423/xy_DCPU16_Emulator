@@ -8,7 +8,7 @@
 int retOpNum1(std::string op, USHORT &ret)
 {
 
-	return _ERR_ASM_NOERR;
+	return _ERR_ASM_ILLEGAL_OP;
 }
 
 int retOpNum2(std::string op, USHORT &ret)
@@ -22,7 +22,7 @@ int retOpNum2(std::string op, USHORT &ret)
 				return _ERR_ASM_ILLEGAL_OP;
 			break;
 		case 'd':
-			if (op[1] == 'a' && op[2] == 't')
+			if (op == "dat")
 				ret = 0x20;
 			else
 				return _ERR_ASM_ILLEGAL_OP;
@@ -61,14 +61,16 @@ int retOpNum2(std::string op, USHORT &ret)
 				return _ERR_ASM_ILLEGAL_OP;
 			break;
 		case 'j':
-			if (op[1] == 's' && op[2] == 'r')
+			if (op == "jsr")
 				ret = 0x01;
 			else
 				return _ERR_ASM_ILLEGAL_OP;
 			break;
 		case 'r':
-			if (op[1] == 'f' && op[2] == 'i')
+			if (op == "rfi")
 				ret = 0x0B;
+			else if (op == "ret")
+				ret = 0x22;
 			else
 				return _ERR_ASM_ILLEGAL_OP;
 			break;
@@ -174,6 +176,12 @@ int retOpNum3(std::string op, USHORT &ret)
 				ret = 0x08;
 			else if (op == "mul")
 				ret = 0x04;
+			else
+				return _ERR_ASM_ILLEGAL_OP;
+			break;
+		case 'r':
+			if (op == "ret")
+				ret = 0x22;
 			else
 				return _ERR_ASM_ILLEGAL_OP;
 			break;
@@ -408,7 +416,7 @@ int retArgNum(std::string arg, USHORT &ret1, USHORT &ret2)
 			std::string reg = arg.substr(0, plusPos);
 			std::string shift = arg.substr(plusPos + 1);
 			bool again = true;
-		_ran_begin:
+		_ran_begin_1:
 			if (reg == "sp")
 				ret1 = 0x1A;
 			else
@@ -419,7 +427,7 @@ int retArgNum(std::string arg, USHORT &ret1, USHORT &ret2)
 					{
 						swap(reg, shift);
 						again = false;
-						goto _ran_begin;
+						goto _ran_begin_1;
 					}
 					else
 						return _ERR_ASM_ILLEGAL_ARG;
@@ -432,7 +440,7 @@ int retArgNum(std::string arg, USHORT &ret1, USHORT &ret2)
 				{
 					swap(reg, shift);
 					again = false;
-					goto _ran_begin;
+					goto _ran_begin_1;
 				}
 				else
 					return _ERR_ASM_ILLEGAL_ARG;
