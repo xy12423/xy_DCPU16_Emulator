@@ -11,11 +11,23 @@
 int doL1(opcode code)
 {
 	USHORT op = code.a;
+	if (op == 0)
+		return -1;
 	int cycle = -1;
 	switch (op)
 	{
-		case 0:
+		case 0x01:
 			cycle = 1;
+			break;
+		case 0x02:
+			for (int i = 0; i < 8; i++)
+				mem[--sp] = reg[i];
+			cycle = 4;
+			break;
+		case 0x03:
+			for (int i = 7; i >= 0; i--)
+				reg[i] = mem[sp++];
+			cycle = 4;
 			break;
 		default:
 			return -1;
