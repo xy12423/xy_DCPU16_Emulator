@@ -300,7 +300,6 @@ struct label
 };
 typedef list<label> labelList;
 
-int m[65536];
 bool joined[65536];
 
 void generate(string path, string arg = "")
@@ -330,8 +329,9 @@ void generate(string path, string arg = "")
 
 	USHORT add = toNum(arg);
 	int len = 0, pendLen = 3, i;
+	int *m = new int[0x200000];
 
-	memset(m, -1, sizeof(m));
+	memset(m, -1, sizeof(int) * 0x200000);
 	memset(joined, false, sizeof(joined));
 	while (!file.eof())
 	{
@@ -397,10 +397,10 @@ void generate(string path, string arg = "")
 				cout << "Illegal instruction in line " << lineCount << endl;
 				goto _g_end;
 			case _ERR_ASM_ILLEGAL_ARG:
-				pendLst.push_back(pendItem(insline, add, 3));
+				pendLst.push_back(pendItem(insline, add, 0x20));
 				joined[add] = true;
 				//为含有未能识别的标签的代码留出空间
-				add += 3;
+				add += 0x20;
 				pendCount++;
 				break;
 			default:
@@ -497,11 +497,13 @@ void generate(string path, string arg = "")
 	add = 0;
 	for (i = 0; add < insLenAll; i++)
 	{
-		if (m[i] == -1)
+		if (m[i] < 0)
 			continue;
 		mem[add++] = m[i];
 	}
-	_g_end:file.close();
+_g_end:file.close();
+	delete[] m;
+	return;
 }
 
 void printUsage()

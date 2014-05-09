@@ -138,19 +138,20 @@ int assembler(std::string code, USHORT ret[], int retLen)
 						break;
 					case 0x02:
 						codelen = 0;
-						ret[codelen++] = 0x6701;
 						retop.op = 0x01;
-						retop.b = 0x1A;
+						retop.b = 0x00;
 						retcode = retArgNum(a, retop.a, nw);
 						if (retcode < 0)
 							return retcode;
 						else
 						{
 							ret[codelen++] = OP2US(retop);
-							ret[codelen++] = 0x0001;
 							if (retcode == 2)
 								ret[codelen++] = nw;
 						}
+						ret[codelen++] = 0x6701;
+						ret[codelen++] = 0x0341;
+						ret[codelen++] = 0x0001;
 						ret[codelen++] = 0x6381;
 						setRetOP = false;
 						break;
