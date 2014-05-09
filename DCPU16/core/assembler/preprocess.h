@@ -27,6 +27,7 @@ void preprcs(std::string &op, std::string &b, std::string &a, int &codeType)
 				{
 					a = b + "," + a;
 					b = "";
+					codeType = 1;
 				}
 			}
 			break;
@@ -40,11 +41,13 @@ void preprcs(std::string &op, std::string &b, std::string &a, int &codeType)
 				op = "set";
 				b = a;
 				a = "pop";
+				codeType = 2;
 			}
 			else if (op == "push")
 			{
 				op = "set";
 				b = "push";
+				codeType = 2;
 			}
 			break;
 	}

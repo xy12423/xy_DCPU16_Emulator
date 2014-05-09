@@ -14,7 +14,6 @@ int errD = 0;
 int assembler(std::string code, USHORT ret[], int retLen)
 {
 	trim(code);
-	lcase(code);
 	if (code.length() < 1)
 		return _ERR_ASM_ILLEGAL;
 	{
@@ -87,6 +86,7 @@ int assembler(std::string code, USHORT ret[], int retLen)
 	trim(b);
 	trim(a);
 	preprcs(op, b, a, codeType);
+	lcase(op);
 	int retcode;
 	switch (codeType)
 	{
@@ -132,11 +132,14 @@ int assembler(std::string code, USHORT ret[], int retLen)
 								for (int i = pItr->length(); i > 0 && codelen < retLen; i--, p++)
 									ret[codelen++] = *p;
 							}
+							else
+								return _ERR_ASM_ILLEGAL_ARG;
 						}
 						setRetOP = false;
 						delete datList;
 						break;
 					case 0x02:
+						lcase(a);
 						codelen = 0;
 						retop.op = 0x01;
 						retop.b = 0x00;
@@ -160,6 +163,7 @@ int assembler(std::string code, USHORT ret[], int retLen)
 			else
 			{
 				USHORT nw = 0;
+				lcase(a);
 				retcode = retArgNum(a, retop.a, nw);
 				if (retcode < 0)
 					return retcode;
@@ -190,6 +194,7 @@ int assembler(std::string code, USHORT ret[], int retLen)
 						ret[codelen++] = 0x1701;
 						ret[codelen++] = 0x1B01;
 						ret[codelen++] = 0x1F01;
+						lcase(a);
 						argList = divideStr(a, ',');
 						argList->reverse();
 						pEnd = argList->end();
@@ -209,6 +214,7 @@ int assembler(std::string code, USHORT ret[], int retLen)
 							}
 						}
 						delete argList;
+						lcase(b);
 						retop.op = 0x00;
 						retop.b = 0x01;
 						retcode = retArgNum(b, retop.a, nw);
@@ -257,12 +263,14 @@ int assembler(std::string code, USHORT ret[], int retLen)
 			else
 			{
 				USHORT nw = 0;
+				lcase(b);
 				retcode = retArgNum(b, retop.b, nw);
 				if (retcode < 0)
 					return retcode;
 				else if (retcode == 2)
 					ret[codelen++] = nw;
 				nw = 0;
+				lcase(a);
 				retcode = retArgNum(a, retop.a, nw);
 				if (retcode < 0)
 					return retcode;
