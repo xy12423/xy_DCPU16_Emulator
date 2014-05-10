@@ -506,12 +506,24 @@ _g_end:file.close();
 	return;
 }
 
+void init()
+{
+	memset(mem, 0, sizeof(mem));
+	for (int i = 0; i < 8; i++)
+		reg[i] = 0;
+	pc = 0;
+	sp = 0;
+	ex = 0;
+	ia = 0;
+}
+
 void printUsage()
 {
 	cout << "assemble\tA [address]" << endl;		//
 	cout << "dump\t\tD [address]" << endl;			//
 	cout << "enter\t\tE address [list]" << endl;	//
 	cout << "generate\tG [address]" << endl;		//
+	cout << "initialize\tI" << endl;				//
 	cout << "load\t\tL address" << endl;			//
 	cout << "name\t\tN path" << endl;				//
 	cout << "proceed\t\tP" << endl;					//
