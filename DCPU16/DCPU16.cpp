@@ -495,16 +495,22 @@ void generate(string path, string arg = "")
 		}
 	}
 	add = 0;
-	for (i = 0; add < insLenAll; i++)
+	int emptyCount = 0;
+	for (i = 0; add < insLenAll && i < 0x200000; i++)
 	{
 		if (m[i] < 0)
+		{
 			continue;
+			emptyCount++;
+		}
 		mem[add++] = m[i];
 	}
 _g_end:file.close();
 	delete[] m;
 	return;
 }
+
+fInit initF[65535];
 
 void init()
 {
@@ -515,6 +521,9 @@ void init()
 	sp = 0;
 	ex = 0;
 	ia = 0;
+	for (UINT i = 0; i < hwn; i++)
+		if (initF[i] != NULL)
+			(*initF[i])();
 }
 
 void printUsage()
@@ -651,6 +660,9 @@ int mainLoop()
 				break;
 			case 'g':
 				generate(filePath, m_arg[0]);
+				break;
+			case 'i':
+				init();
 				break;
 			default:
 				cout << "  ^ Error" << endl;

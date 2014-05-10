@@ -77,7 +77,9 @@ int __cdecl intrpt()
 
 extern "C" __declspec(dllexport) int init()
 {
-	int ret = LoadDisk("floppy.dfd");
+	int ret = 0;
+	if (floppyState == FLOPPY_STATE_NO_MEDIA)
+		ret = LoadDisk("floppy.dfd");
 	return ret;
 }
 

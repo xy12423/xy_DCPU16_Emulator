@@ -29,7 +29,10 @@ int __cdecl intrptMonitor()
 			{
 				mvStart = itr;
 				if (mOn == 0)
+				{
+					monitorBootCount = 0;
 					mOn = 1;
+				}
 			}
 			break;
 		case 1:
@@ -112,6 +115,26 @@ int __cdecl intrptKeyb()
 			break;
 	}
 	return cycle;
+}
+
+extern "C" __declspec(dllexport) int init()
+{
+	for (int i = 0; i < 128; i++)
+		for (int j = 0; j < 96; j++)
+		{
+			mem[i][j].r = 0.0f;
+			mem[i][j].g = 0.0f;
+			mem[i][j].b = 0.0f;
+		}
+	mOn = 0;
+	mvStart = 0;
+	usrMF = false;
+	mfStart = 0;
+	usrMP = false;
+	mpStart = 0;
+	if (hWnd != NULL)
+		PostMessage(hWnd, 0xFFFF, 0, 0);
+	return 0;
 }
 
 extern "C" __declspec(dllexport) int __cdecl getHWCount()
