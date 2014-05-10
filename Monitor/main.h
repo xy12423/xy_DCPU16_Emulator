@@ -364,12 +364,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	bool oldBigLetter;
 	switch (uMsg)
 	{
-		case WM_ACTIVATE:
-			if (!HIWORD(wParam))
-				active = TRUE;
-			else
-				active = FALSE;
-			return 0;
 		case WM_SYSCOMMAND:
 			switch (wParam)
 			{

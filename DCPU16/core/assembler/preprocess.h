@@ -31,6 +31,14 @@ void preprcs(std::string &op, std::string &b, std::string &a, int &codeType)
 				}
 			}
 			break;
+		case 'g':
+			if (op == "goto")
+			{
+				op = "set";
+				b = "pc";
+				codeType = 2;
+			}
+			break;
 		case 'm':
 			if (op == "mov")
 				op = "set";
