@@ -65,6 +65,11 @@ bool canBeNum(std::string str)
 	if (len == 0)
 		return false;
 	lcase(str);
+	if (str.front() == '-' || str.front() == '+')
+	{
+		str.erase(0, 1);
+		len--;
+	}
 	if (str[len - 1] == 'h')
 	{
 		level = 2;
@@ -104,6 +109,18 @@ int toNum(std::string str, int type = 0)
 	if (len < 1)
 		return INT_MIN;
 	std::stringstream ss;
+	bool negative = false;
+	if (str.front() == '-')
+	{
+		str.erase(0, 1);
+		negative = true;
+		len--;
+	}
+	else if (str.front() == '+')
+	{
+		str.erase(0, 1);
+		len--;
+	}
 	switch (type)
 	{
 		case 0:
@@ -159,6 +176,8 @@ int toNum(std::string str, int type = 0)
 			ss >> ret;
 			break;
 	}
+	if (negative)
+		ret = -ret;
 	return ret;
 }
 
@@ -312,6 +331,8 @@ int calcStr(std::string str, long long &ret)
 std::list<std::string>* divideStr(std::string str, char sep)
 {
 	std::list<std::string> *ret = new std::list<std::string>;
+	if (str.length() < 1)
+		return ret;
 	int dotPos = str.find(sep);
 	while (dotPos != std::string::npos)
 	{

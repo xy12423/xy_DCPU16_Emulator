@@ -5,10 +5,21 @@
 
 #include "define.h"
 
-void preprcs(std::string &op, std::string &b, std::string &a)
+void preprcs(std::string &op, std::string &b, std::string &a, int &codeType)
 {
 	switch (op.front())
 	{
+		case 'c':
+			if (op == "call")
+			{
+				if (codeType == 1)
+				{
+					b = a;
+					a = "";
+					codeType = 2;
+				}
+			}
+			break;
 		case 'd':
 			if (op == "dat")
 			{
@@ -16,6 +27,7 @@ void preprcs(std::string &op, std::string &b, std::string &a)
 				{
 					a = b + "," + a;
 					b = "";
+					codeType = 1;
 				}
 			}
 			break;
@@ -29,11 +41,13 @@ void preprcs(std::string &op, std::string &b, std::string &a)
 				op = "set";
 				b = a;
 				a = "pop";
+				codeType = 2;
 			}
 			else if (op == "push")
 			{
 				op = "set";
 				b = "push";
+				codeType = 2;
 			}
 			break;
 	}

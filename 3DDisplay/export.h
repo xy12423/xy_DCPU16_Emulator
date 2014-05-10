@@ -38,6 +38,14 @@ int __cdecl intrpt()
 	return cycle;
 }
 
+extern "C" __declspec(dllexport) int init()
+{
+	mvStart = 0;
+	mvCount = 0;
+	mvEnd = 0;
+	return 0;
+}
+
 extern "C" __declspec(dllexport) int __cdecl getHWCount()
 {
 	return HW_COUNT;

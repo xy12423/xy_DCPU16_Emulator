@@ -300,7 +300,6 @@ struct label
 };
 typedef list<label> labelList;
 
-int m[65536];
 bool joined[65536];
 
 void generate(string path, string arg = "")
@@ -330,8 +329,9 @@ void generate(string path, string arg = "")
 
 	USHORT add = toNum(arg);
 	int len = 0, pendLen = 3, i;
+	int *m = new int[0x200000];
 
-	memset(m, -1, sizeof(m));
+	memset(m, -1, sizeof(int) * 0x200000);
 	memset(joined, false, sizeof(joined));
 	while (!file.eof())
 	{
@@ -397,10 +397,10 @@ void generate(string path, string arg = "")
 				cout << "Illegal instruction in line " << lineCount << endl;
 				goto _g_end;
 			case _ERR_ASM_ILLEGAL_ARG:
-				pendLst.push_back(pendItem(insline, add, 3));
+				pendLst.push_back(pendItem(insline, add, 0x20));
 				joined[add] = true;
 				//为含有未能识别的标签的代码留出空间
-				add += 3;
+				add += 0x20;
 				pendCount++;
 				break;
 			default:
@@ -495,13 +495,35 @@ void generate(string path, string arg = "")
 		}
 	}
 	add = 0;
-	for (i = 0; add < insLenAll; i++)
+	int emptyCount = 0;
+	for (i = 0; add < insLenAll && i < 0x200000; i++)
 	{
-		if (m[i] == -1)
+		if (m[i] < 0)
+		{
 			continue;
+			emptyCount++;
+		}
 		mem[add++] = m[i];
 	}
-	_g_end:file.close();
+_g_end:file.close();
+	delete[] m;
+	return;
+}
+
+fInit initF[65535];
+
+void init()
+{
+	memset(mem, 0, sizeof(mem));
+	for (int i = 0; i < 8; i++)
+		reg[i] = 0;
+	pc = 0;
+	sp = 0;
+	ex = 0;
+	ia = 0;
+	for (UINT i = 0; i < hwn; i++)
+		if (initF[i] != NULL)
+			(*initF[i])();
 }
 
 void printUsage()
@@ -510,6 +532,7 @@ void printUsage()
 	cout << "dump\t\tD [address]" << endl;			//
 	cout << "enter\t\tE address [list]" << endl;	//
 	cout << "generate\tG [address]" << endl;		//
+	cout << "initialize\tI" << endl;				//
 	cout << "load\t\tL address" << endl;			//
 	cout << "name\t\tN path" << endl;				//
 	cout << "proceed\t\tP" << endl;					//
@@ -637,6 +660,9 @@ int mainLoop()
 				break;
 			case 'g':
 				generate(filePath, m_arg[0]);
+				break;
+			case 'i':
+				init();
 				break;
 			default:
 				cout << "  ^ Error" << endl;

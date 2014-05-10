@@ -7,8 +7,26 @@
 
 int retOpNum1(std::string op, USHORT &ret)
 {
-
-	return _ERR_ASM_ILLEGAL_OP;
+	switch (op.front())
+	{
+		case 'n':
+			if (op == "nop")
+				ret = 0x01;
+			else
+				return _ERR_ASM_ILLEGAL_OP;
+			break;
+		case 'p':
+			if (op == "pusha")
+				ret = 0x02;
+			else if (op == "popa")
+				ret = 0x03;
+			else
+				return _ERR_ASM_ILLEGAL_OP;
+			break;
+		default:
+			return _ERR_ASM_ILLEGAL_OP;
+	}
+	return _ERR_ASM_NOERR;
 }
 
 int retOpNum2(std::string op, USHORT &ret)
@@ -238,9 +256,34 @@ int retOpNum3(std::string op, USHORT &ret)
 	return _ERR_ASM_NOERR;
 }
 
+std::string op1[] = {
+	std::string(""),		std::string("NOP"),		std::string("PUSHA"),	std::string("POPA"),
+	std::string(""),		std::string(""),		std::string(""),		std::string(""),
+	std::string(""),		std::string(""),		std::string(""),		std::string(""),
+	std::string(""),		std::string(""),		std::string(""),		std::string(""),
+	std::string(""),		std::string(""),		std::string(""),		std::string(""),
+	std::string(""),		std::string(""),		std::string(""),		std::string(""),
+	std::string(""),		std::string(""),		std::string(""),		std::string(""),
+	std::string(""),		std::string(""),		std::string(""),		std::string(""),
+	std::string(""),		std::string(""),		std::string(""),		std::string(""),
+	std::string(""),		std::string(""),		std::string(""),		std::string(""),
+	std::string(""),		std::string(""),		std::string(""),		std::string(""),
+	std::string(""),		std::string(""),		std::string(""),		std::string(""),
+	std::string(""),		std::string(""),		std::string(""),		std::string(""),
+	std::string(""),		std::string(""),		std::string(""),		std::string(""),
+	std::string(""),		std::string(""),		std::string(""),		std::string(""),
+	std::string(""),		std::string(""),		std::string(""),		std::string(""),
+};
+
 int retOpStr1(USHORT op, std::string &ret)
 {
-	return _ERR_ASM_ILLEGAL;
+	if (op < 0x40)
+		ret = op1[op];
+	else
+		return _ERR_ASM_ILLEGAL;
+	if (ret == "")
+		return _ERR_ASM_ILLEGAL;
+	return _ERR_ASM_NOERR;
 }
 
 std::string op2[] = {
@@ -402,13 +445,15 @@ int retArgNum(std::string arg, USHORT &ret1, USHORT &ret2)
 	if (arg.front() == '[')
 	{
 		arg.erase(0, 1);
-		//arg.erase(arg.length() - 1, 1);
 		arg.pop_back();
 		if (calcStr(arg, temp) == 0)
 			arg = "0x" + toHEX((USHORT)(temp));
 		if (arg.length() < 1)
 			return _ERR_ASM_ILLEGAL;
-		int plusPos = arg.find('+');
+		int plusPos = arg.find('-');
+		if (plusPos != std::string::npos)
+			arg = arg.substr(0, plusPos) + "+" + arg.substr(plusPos);
+		plusPos = arg.find('+');
 		if (plusPos != std::string::npos)
 		{
 			if (arg.length() < 3)
@@ -526,7 +571,13 @@ int retArgNum(std::string arg, USHORT &ret1, USHORT &ret2)
 			else if (arg.substr(0, 4) == "pick")
 			{
 				ret1 = 0x1A;
-				ret2 = (USHORT)toNum(arg.substr(5));
+				arg = arg.substr(5);
+				if (calcStr(arg, temp) == 0)
+					ret2 = (USHORT)(temp);
+				else if (canBeNum(arg))
+					ret2 = (USHORT)toNum(arg);
+				else
+					return _ERR_ASM_ILLEGAL_ARG;
 				inslen = 2;
 			}
 			else

@@ -14,7 +14,8 @@ int errD = 0;
 int assembler(std::string code, USHORT ret[], int retLen)
 {
 	trim(code);
-	lcase(code);
+	if (code.length() < 1)
+		return _ERR_ASM_ILLEGAL;
 	{
 		std::list<std::string> *cmdList = divideStr(code, ';');
 		if (cmdList->size() > 1)
@@ -24,6 +25,8 @@ int assembler(std::string code, USHORT ret[], int retLen)
 			int codeLen = 0, retCode = 0, i;
 			for (p = cmdList->cbegin(); p != pEnd; p++)
 			{
+				if (p->length() < 1)
+					continue;
 				retCode = assembler(*p, tRet, 65536);
 				if (retCode < 1)
 					return retCode;
@@ -50,157 +53,97 @@ int assembler(std::string code, USHORT ret[], int retLen)
 	int codelen = 1;
 	bool setRetOP = true;
 	std::string op, b, a;
+	int codeType = -1;
 	{
 		int spacePos = code.find(' ');
 		if (spacePos == std::string::npos)
-			return _ERR_ASM_ILLEGAL;
-		op = code.substr(0, spacePos);
-		int dotPos = code.find(',');
-		if (dotPos == std::string::npos)
 		{
 			b = "";
-			a = code.substr(spacePos + 1);
+			a = "";
+			op = code;
+			codeType = 0;
 		}
-		else if (dotPos >= len - 1)
-			return _ERR_ASM_ILLEGAL;
 		else
 		{
-			b = code.substr(spacePos + 1, dotPos - spacePos - 1);
-			a = code.substr(dotPos + 1);
+			op = code.substr(0, spacePos);
+			int dotPos = code.find(',');
+			if (dotPos == std::string::npos)
+			{
+				b = "";
+				a = code.substr(spacePos + 1);
+				codeType = 1;
+			}
+			else if (dotPos >= len - 1)
+				return _ERR_ASM_ILLEGAL;
+			else
+			{
+				b = code.substr(spacePos + 1, dotPos - spacePos - 1);
+				a = code.substr(dotPos + 1);
+				codeType = 2;
+			}
 		}
 	}
 	trim(b);
 	trim(a);
-	preprcs(op, b, a);
-	if (b.length() == 0)
+	preprcs(op, b, a, codeType);
+	lcase(op);
+	int retcode;
+	switch (codeType)
 	{
-		retop.op = 0;
-		int retcode = retOpNum2(op, retop.b);
-		if (retcode != _ERR_ASM_NOERR)
-			return retcode;
-		if (retop.b > 0x1F)
-		{
-			retop.b -= 0x20;
-			std::list<std::string> *datList;
-			std::list<std::string>::iterator pItr, pEnd;
-			USHORT nw = 0;
-			switch (retop.b)
-			{
-				case 0x00:
-					datList = divideStr(a, ',');
-					codelen = 0;
-					pEnd = datList->end();
-					for (pItr = datList->begin(); pItr != pEnd; pItr++)
-					{
-						if (canBeNum(*pItr))
-							ret[codelen++] = toNum(*pItr);
-						else if (pItr->front() == '[' && pItr->back() == ']')
-						{
-							pItr->erase(0, 1);
-							pItr->pop_back();
-							for (int i = toNum(*pItr); i > 0 && codelen < retLen; i--)
-								ret[codelen++] = 0;
-						}
-						else if (pItr->front() == '"' && pItr->back() == '"')
-						{
-							pItr->erase(0, 1);
-							pItr->pop_back();
-							std::string::const_iterator p = pItr->cbegin();
-							for (int i = pItr->length(); i > 0 && codelen < retLen; i--, p++)
-								ret[codelen++] = *p;
-						}
-					}
-					setRetOP = false;
-					delete datList;
-					break;
-				case 0x01:
-					codelen = 0;
-					ret[codelen++] = 0x0301;
-					ret[codelen++] = 0x0701;
-					ret[codelen++] = 0x0B01;
-					ret[codelen++] = 0x0F01;
-					ret[codelen++] = 0x1301;
-					ret[codelen++] = 0x1701;
-					ret[codelen++] = 0x1B01;
-					ret[codelen++] = 0x1F01;
-					retop.op = 0x00;
-					retop.b = 0x01;
-					retcode = retArgNum(a, retop.a, nw);
-					if (retcode < 0)
-						return retcode;
-					else
-					{
-						ret[codelen++] = OP2US(retop);
-						if (retcode == 2)
-							ret[codelen++] = nw;
-					}
-					setRetOP = false;
-					break;
-				case 0x02:
-					retop.op = 0x02;
-					retop.b = 0x1B;
-					retcode = retArgNum(a, retop.a, nw);
-					if (retcode < 0)
-						return retcode;
-					else if(retop.a > 0)
-					{
-						ret[codelen++] = OP2US(retop);
-						if (retcode == 2)
-							ret[codelen++] = nw;
-					}
-					ret[codelen++] = 0x60E1;
-					ret[codelen++] = 0x60C1;
-					ret[codelen++] = 0x60A1;
-					ret[codelen++] = 0x6081;
-					ret[codelen++] = 0x6061;
-					ret[codelen++] = 0x6041;
-					ret[codelen++] = 0x6021;
-					ret[codelen++] = 0x6001;
-					ret[codelen++] = 0x6381;
-					break;
-			}
-		}
-		else
-		{
-			USHORT nw = 0;
-			retcode = retArgNum(a, retop.a, nw);
-			if (retcode < 0)
+		case 0:
+			retop.op = 0;
+			retcode = retOpNum1(op, retop.a);
+			if (retcode != _ERR_ASM_NOERR)
 				return retcode;
-			else if (retcode == 2)
-				ret[codelen++] = nw;
-		}
-	}
-	else
-	{
-		int retcode = retOpNum3(op, retop.op);
-		if (retcode != _ERR_ASM_NOERR)
-			return retcode;
-		if (retop.op > 0x1F)
-		{
-			retop.op -= 0x20;
-			USHORT nw = 0;
-			std::list<std::string> *argList;
-			std::list<std::string>::iterator pItr, pEnd;
-			switch (retop.op)
+			break;
+		case 1:
+			retop.op = 0;
+			retcode = retOpNum2(op, retop.b);
+			if (retcode != _ERR_ASM_NOERR)
+				return retcode;
+			if (retop.b > 0x1F)
 			{
-				case 0x01:
-					codelen = 0;
-					ret[codelen++] = 0x0301;
-					ret[codelen++] = 0x0701;
-					ret[codelen++] = 0x0B01;
-					ret[codelen++] = 0x0F01;
-					ret[codelen++] = 0x1301;
-					ret[codelen++] = 0x1701;
-					ret[codelen++] = 0x1B01;
-					ret[codelen++] = 0x1F01;
-					argList = divideStr(a, ',');
-					argList->reverse();
-					pEnd = argList->end();
-					retop.op = 0x01;
-					retop.b = 0x18;
-					for (pItr = argList->begin(); pItr != pEnd; pItr++)
-					{
-						retcode = retArgNum(*pItr, retop.a, nw);
+				retop.b -= 0x20;
+				std::list<std::string> *datList;
+				std::list<std::string>::iterator pItr, pEnd;
+				USHORT nw = 0;
+				switch (retop.b)
+				{
+					case 0x00:
+						datList = divideStr(a, ',');
+						codelen = 0;
+						pEnd = datList->end();
+						for (pItr = datList->begin(); pItr != pEnd; pItr++)
+						{
+							if (canBeNum(*pItr))
+								ret[codelen++] = toNum(*pItr);
+							else if (pItr->front() == '[' && pItr->back() == ']')
+							{
+								pItr->erase(0, 1);
+								pItr->pop_back();
+								for (int i = toNum(*pItr); i > 0 && codelen < retLen; i--)
+									ret[codelen++] = 0;
+							}
+							else if (pItr->front() == '"' && pItr->back() == '"')
+							{
+								pItr->erase(0, 1);
+								pItr->pop_back();
+								std::string::const_iterator p = pItr->cbegin();
+								for (int i = pItr->length(); i > 0 && codelen < retLen; i--, p++)
+									ret[codelen++] = *p;
+							}
+							else
+								return _ERR_ASM_ILLEGAL_ARG;
+						}
+						setRetOP = false;
+						delete datList;
+						break;
+					case 0x02:
+						lcase(a);
+						codelen = 0;
+						retop.op = 0x01;
+						retop.b = 0x00;
+						retcode = retArgNum(a, retop.a, nw);
 						if (retcode < 0)
 							return retcode;
 						else
@@ -209,78 +152,132 @@ int assembler(std::string code, USHORT ret[], int retLen)
 							if (retcode == 2)
 								ret[codelen++] = nw;
 						}
-					}
-					delete argList;
-					retop.op = 0x00;
-					retop.b = 0x01;
-					retcode = retArgNum(b, retop.a, nw);
-					if (retcode < 0)
-						return retcode;
-					else
-					{
-						ret[codelen++] = OP2US(retop);
-						if (retcode == 2)
-							ret[codelen++] = nw;
-					}
-					setRetOP = false;
-					break;
-				case 0x02:
-					codelen = 0;
-					retop.op = 0x02;
-					retop.b = 0x1B;
-					retcode = retArgNum(b, retop.a, nw);
-					if (retcode < 0)
-						return retcode;
-					else if (retop.a != 0x21)
-					{
-						ret[codelen++] = OP2US(retop);
-						if (retcode == 2)
-							ret[codelen++] = nw;
-					}
-					retop.op = 0x01;
-					retop.b = 0x18;
-					retcode = retArgNum(a, retop.a, nw);
-					if (retcode < 0)
-						return retcode;
-					else if (retop.a > 0)
-					{
-						ret[codelen++] = OP2US(retop);
-						if (retcode == 2)
-							ret[codelen++] = nw;
-					}
-					ret[codelen++] = 0x8B62;
-					ret[codelen++] = 0x60E1;
-					ret[codelen++] = 0x60C1;
-					ret[codelen++] = 0x60A1;
-					ret[codelen++] = 0x6081;
-					ret[codelen++] = 0x6061;
-					ret[codelen++] = 0x6041;
-					ret[codelen++] = 0x6021;
-					ret[codelen++] = 0x6001;
-					ret[codelen++] = 0x6701;
-					ret[codelen++] = 0x6B41;
-					ret[codelen++] = 0x0001;
-					ret[codelen++] = 0xFFF8;
-					ret[codelen++] = 0x6381;
-					setRetOP = false;
-					break;
+						ret[codelen++] = 0x6701;
+						ret[codelen++] = 0x0341;
+						ret[codelen++] = 0x0001;
+						ret[codelen++] = 0x6381;
+						setRetOP = false;
+						break;
+				}
 			}
-		}
-		else
-		{
-			USHORT nw = 0;
-			retcode = retArgNum(b, retop.b, nw);
-			if (retcode < 0)
+			else
+			{
+				USHORT nw = 0;
+				lcase(a);
+				retcode = retArgNum(a, retop.a, nw);
+				if (retcode < 0)
+					return retcode;
+				else if (retcode == 2)
+					ret[codelen++] = nw;
+			}
+			break;
+		case 2:
+			retcode = retOpNum3(op, retop.op);
+			if (retcode != _ERR_ASM_NOERR)
 				return retcode;
-			else if (retcode == 2)
-				ret[codelen++] = nw;
-			nw = 0;
-			retcode = retArgNum(a, retop.a, nw);
-			if (retcode < 0)
-				return retcode;
-			else if (retcode == 2)
-				ret[codelen++] = nw;
-		}
+			if (retop.op > 0x1F)
+			{
+				retop.op -= 0x20;
+				USHORT nw = 0;
+				std::list<std::string> *argList;
+				std::list<std::string>::iterator pItr, pEnd;
+				int argc = 0;
+				switch (retop.op)
+				{
+					case 0x01:
+						codelen = 0;
+						ret[codelen++] = 0x0301;
+						ret[codelen++] = 0x0701;
+						ret[codelen++] = 0x0B01;
+						ret[codelen++] = 0x0F01;
+						ret[codelen++] = 0x1301;
+						ret[codelen++] = 0x1701;
+						ret[codelen++] = 0x1B01;
+						ret[codelen++] = 0x1F01;
+						lcase(a);
+						argList = divideStr(a, ',');
+						argList->reverse();
+						pEnd = argList->end();
+						retop.op = 0x01;
+						retop.b = 0x18;
+						for (pItr = argList->begin(); pItr != pEnd; pItr++)
+						{
+							retcode = retArgNum(*pItr, retop.a, nw);
+							if (retcode < 0)
+								return retcode;
+							else
+							{
+								ret[codelen++] = OP2US(retop);
+								if (retcode == 2)
+									ret[codelen++] = nw;
+								argc++;
+							}
+						}
+						delete argList;
+						lcase(b);
+						retop.op = 0x00;
+						retop.b = 0x01;
+						retcode = retArgNum(b, retop.a, nw);
+						if (retcode < 0)
+							return retcode;
+						else
+						{
+							ret[codelen++] = OP2US(retop);
+							if (retcode == 2)
+								ret[codelen++] = nw;
+						}
+						ret[codelen++] = 0x6001;
+						if (argc > 0)
+						{
+							retop.op = 0x02;
+							retop.b = 0x1B;
+							if (argc < 0x1F)
+							{
+								retop.a = (USHORT)(argc)+0x21;
+								ret[codelen++] = OP2US(retop);
+							}
+							else
+							{
+								retop.a = 0x1F;
+								ret[codelen++] = OP2US(retop);
+								ret[codelen++] = (USHORT)(argc);
+							}
+						}
+						ret[codelen++] = 0x60E1;
+						ret[codelen++] = 0x60C1;
+						ret[codelen++] = 0x60A1;
+						ret[codelen++] = 0x6081;
+						ret[codelen++] = 0x6061;
+						ret[codelen++] = 0x6041;
+						ret[codelen++] = 0x6021;
+						ret[codelen++] = 0x0301;
+						ret[codelen++] = 0x6801;
+						ret[codelen++] = 0x0001;
+						ret[codelen++] = 0x6741;
+						ret[codelen++] = 0x0001;
+						ret[codelen++] = 0x8B62;
+						setRetOP = false;
+						break;
+				}
+			}
+			else
+			{
+				USHORT nw = 0;
+				lcase(b);
+				retcode = retArgNum(b, retop.b, nw);
+				if (retcode < 0)
+					return retcode;
+				else if (retcode == 2)
+					ret[codelen++] = nw;
+				nw = 0;
+				lcase(a);
+				retcode = retArgNum(a, retop.a, nw);
+				if (retcode < 0)
+					return retcode;
+				else if (retcode == 2)
+					ret[codelen++] = nw;
+			}
+			break;
 	}
 	if (setRetOP)
 		ret[0] = OP2US(retop);

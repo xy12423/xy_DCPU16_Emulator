@@ -27,13 +27,6 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 		info[1].x = 0x2EBC;
 		info[1].y = 0x6F78;
 		info[1].hwi = &intrptKeyb;
-		for (int i = 0; i < 128; i++)
-			for (int j = 0; j < 96; j++)
-			{
-				mem[i][j].r = 0.0f;
-				mem[i][j].g = 0.0f;
-				mem[i][j].b = 0.0f;
-			}
 		timeSetEvent(20, 1, &ClockMain, 0, TIME_PERIODIC);
 		mainThread = CreateThread(NULL, 0, &MainThread, NULL, 0, &threadID);
 		break;
