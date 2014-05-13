@@ -300,6 +300,26 @@ struct label
 };
 typedef list<label> labelList;
 
+struct defItem
+{
+	std::string name, val;
+	defItem(){};
+	defItem(std::string _name, std::string _val)
+	{
+		name = _name;
+		val = _val;
+	}
+	bool operator <(const defItem &n)
+	{
+		return name.length() > n.name.length();
+	}
+	bool operator >(const defItem &n)
+	{
+		return name.length() < n.name.length();
+	}
+};
+typedef list<defItem> defList;
+
 bool joined[65536];
 
 void generate(string path, string arg = "")
@@ -318,6 +338,8 @@ void generate(string path, string arg = "")
 	USHORT sysLblCount = 0;
 	string sysLabel;
 
+	string ppCmd, ppArg;
+
 	labelList lblLst;
 	pendList pendLst;
 	string lbl;
@@ -326,6 +348,9 @@ void generate(string path, string arg = "")
 	list<labelList::iterator> lblUsedLst;
 	list<labelList::iterator>::const_iterator usedItr, usedEnd;
 	pendItem pendItm;
+
+	defList defLst;
+	defList::iterator defItr, defEnd;
 
 	USHORT add = toNum(arg);
 	int len = 0, pendLen = 3, i;
@@ -341,6 +366,58 @@ void generate(string path, string arg = "")
 		trim(insline);
 		if (insline.length() < 1)
 			continue;
+		if (insline.front() == '#')
+		{
+			insline.erase(0, 1);
+			markPos = insline.find(' ');
+			if (markPos == string::npos)
+			{
+				ppCmd = insline;
+				ppArg = "";
+			}
+			else
+			{
+				ppCmd = insline.substr(0, markPos);
+				ppArg = insline.substr(markPos + 1);
+			}
+			lcase(ppCmd);
+			if (ppCmd == "define")
+			{
+				markPos = ppArg.find(' ');
+				if (markPos == string::npos)
+				{
+					ppCmd = ppArg;
+					ppArg = "";
+				}
+				else
+				{
+					ppCmd = ppArg.substr(0, markPos);
+					ppArg = ppArg.substr(markPos + 1);
+				}
+				defItem newDefItm(ppCmd, ppArg);
+				defEnd = defLst.end();
+				for (defItr = defLst.begin(); defItr != defEnd; defItr++)
+					if ((*defItr) > newDefItm)
+						break;
+				defLst.insert(defItr, newDefItm);
+			}
+			else if (ppCmd == "undef")
+			{
+				defEnd = defLst.end();
+				for (defItr = defLst.begin(); defItr != defEnd; defItr++)
+					if (defItr->name == ppArg)
+					{
+						defLst.erase(defItr);
+						break;
+					}
+			}
+			else
+			{
+				cout << "Undefined preprocess command" << endl;
+				goto _g_end;
+			}
+			continue;
+		}
 		markPos = insline.find(';');
 		if (markPos != string::npos)
 		{
@@ -386,6 +463,16 @@ void generate(string path, string arg = "")
 		}
 		if (insline.length() < 1)
 			continue;
+		defEnd = defLst.end();
+		for (defItr = defLst.begin(); defItr != defEnd; defItr++)
+		{
+			markPos = insline.find(defItr->name);
+			while (markPos != string::npos)
+			{
+				insline = insline.substr(0, markPos) + defItr->val + insline.substr(markPos + defItr->name.length());
+				markPos = insline.find(defItr->name);
+			}
+		}
 		len = assembler(insline, m_ret, INS_RET_LEN);
 		switch (len)
 		{
