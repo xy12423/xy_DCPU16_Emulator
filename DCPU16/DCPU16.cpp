@@ -327,11 +327,13 @@ bool preprocesser(string path)
 {
 	ifstream mfin(path);
 	ofstream fout("pp_" + path);
+
+	return false;
 }
 
 int generate(string path, USHORT wAdd = 0)
 {
-	if (!preprocesser(path))
+	if (preprocesser(path))
 		return -1;
 	ifstream file("pp_" + path);
 	if (!file.is_open())
@@ -356,7 +358,6 @@ int generate(string path, USHORT wAdd = 0)
 	labelList::iterator lblBeg, lblItr, lblEnd;
 	list<labelList::iterator> lblUsedLst;
 	list<labelList::iterator>::const_iterator usedItr, usedEnd;
-	pendList pendRet;
 	pendItem pendItm;
 
 	string ppCmd, ppArg;
@@ -526,8 +527,9 @@ int generate(string path, USHORT wAdd = 0)
 		add = pendItm.pos;
 		if (add < addShift)
 		{
-			pendRet.push_back(pendItm);
-			continue;
+			cout << "Assembler Error" << endl;
+			cout << "Please send your program to the developer" << endl;
+			goto _g_end;
 		}
 		joined[add - addShift] = false;
 		pendLen = pendItm.len;
@@ -573,9 +575,6 @@ int generate(string path, USHORT wAdd = 0)
 				goto _g_end;
 			case _ERR_ASM_ILLEGAL:
 			case _ERR_ASM_ILLEGAL_OP:
-				cout << path << ':' << pendItm.lineN << ":Illegal instruction " << pendItm.str << endl;
-				result = -1;
-				goto _g_end;
 			case _ERR_ASM_ILLEGAL_ARG:
 				cout << path << ':' << pendItm.lineN << ":Illegal instruction " << pendItm.str << endl;
 				result = -1;
@@ -607,11 +606,6 @@ int generate(string path, USHORT wAdd = 0)
 					}
 				}
 		}
-	}
-	while (!pendRet.empty())
-	{
-		pendLst.push_back(pendRet.front());
-		pendRet.pop_front();
 	}
 	add = wAdd;
 	int retLen = 0;
