@@ -270,13 +270,14 @@ struct pendItem
 {
 	std::string str;
 	USHORT pos;
-	int len;
+	int len, lineN;
 	pendItem(){};
-	pendItem(std::string _str, USHORT _pos, int _len)
+	pendItem(std::string _str, USHORT _pos, int _len, int _lineN)
 	{
 		str = _str;
 		pos = _pos;
 		len = _len;
+		lineN = _lineN;
 	}
 };
 typedef list<pendItem> pendList;
@@ -320,28 +321,29 @@ struct defItem
 };
 typedef list<defItem> defList;
 
-bool joined[65536];
+bool joined[0x200000];
 
-void generate(string path, string arg = "")
+labelList lblLst;
+pendList pendLst;
+USHORT sysLblCount = 0;
+
+defList defLst;
+
+int generate(string path, USHORT wAdd = 0, int * mm = NULL)
 {
 	ifstream file(path);
 	if (!file.is_open())
 	{
 		cout << "  ^ Error" << endl;
-		return;
+		return 0;
 	}
 
 	char *line = new char[65536];
 	int lineCount = 0;
 	string insline;
 	int markPos = string::npos;
-	USHORT sysLblCount = 0;
+	
 	string sysLabel;
-
-	string ppCmd, ppArg;
-
-	labelList lblLst;
-	pendList pendLst;
 	string lbl;
 	int pendCount = 0;
 	labelList::iterator lblBeg, lblItr, lblEnd;
@@ -349,12 +351,19 @@ void generate(string path, string arg = "")
 	list<labelList::iterator>::const_iterator usedItr, usedEnd;
 	pendItem pendItm;
 
-	defList defLst;
+	string ppCmd, ppArg;
 	defList::iterator defItr, defEnd;
 
-	USHORT add = toNum(arg);
+	USHORT add = wAdd, addShift = wAdd;
 	int len = 0, pendLen = 3, i;
 	int *m = new int[0x200000];
+	if (mm == NULL)
+	{
+		sysLblCount = 0;
+		lblLst.clear();
+		pendLst.clear();
+		defLst.clear();
+	}
 
 	memset(m, -1, sizeof(int) * 0x200000);
 	memset(joined, false, sizeof(joined));
@@ -411,9 +420,13 @@ void generate(string path, string arg = "")
 						break;
 					}
 			}
+			else if (ppCmd == "include")
+			{
+				
+			}
 			else
 			{
-				cout << "Undefined preprocess command" << endl;
+				cout << lineCount << ":Undefined preprocess command" << endl;
 				goto _g_end;
 			}
 			continue;
@@ -477,25 +490,24 @@ void generate(string path, string arg = "")
 		switch (len)
 		{
 			case _ERR_ASM_NOT_SUPPORTED:
-				cout << "Instruction in line " << lineCount << " is not supported" << endl;
+				cout << lineCount << ":Instruction " << line << " is not supported" << endl;
 				goto _g_end;
 			case _ERR_ASM_ILLEGAL:
 			case _ERR_ASM_ILLEGAL_OP:
-				cout << "Illegal instruction in line " << lineCount << endl;
+				cout << lineCount << ":Illegal instruction " << line << endl;
 				goto _g_end;
 			case _ERR_ASM_ILLEGAL_ARG:
-				pendLst.push_back(pendItem(insline, add, 0x20));
-				joined[add] = true;
+				pendLst.push_back(pendItem(insline, add, 0x20, lineCount));
+				joined[add - addShift] = true;
 				//为含有未能识别的标签的代码留出空间
 				add += 0x20;
 				pendCount++;
 				break;
 			default:
 				for (i = 0; i < len; i++, add++)
-					m[add] = m_ret[i];
+					m[add - addShift] = m_ret[i];
 		}
 	}
-	delete[] line;
 	lblLst.sort();	//按标签长度从大到小排序以解决长标签与短标签内容部分重复时长标签被部分替换的问题
 	lblBeg = lblLst.begin();
 	lblEnd = lblLst.end();
@@ -507,10 +519,10 @@ void generate(string path, string arg = "")
 		pendLst.pop_front();
 		insline = pendItm.str;
 		add = pendItm.pos;
-		joined[add] = false;
+		joined[add - addShift] = false;
 		pendLen = pendItm.len;
 		for (i = 0; i < pendLen; i++)
-			m[add + i] = -1;
+			m[add + i - addShift] = -1;
 		lblUsedLst.clear();
 		for (lblItr = lblBeg; lblItr != lblEnd; lblItr++)
 		{
@@ -546,16 +558,16 @@ void generate(string path, string arg = "")
 		switch (len)
 		{
 			case _ERR_ASM_NOT_SUPPORTED:
-				cout << "Instruction " << pendItm.str << " is not supported" << endl;
+				cout << pendItm.lineN << ":Instruction " << pendItm.str << " is not supported" << endl;
 				goto _g_end;
 			case _ERR_ASM_ILLEGAL:
 			case _ERR_ASM_ILLEGAL_OP:
 			case _ERR_ASM_ILLEGAL_ARG:
-				cout << "Illegal instruction " << insline << endl;
+				cout << pendItm.lineN << ":Illegal instruction " << insline << endl;
 				goto _g_end;
 			default:
 				for (i = 0; i < len; i++, add++)
-					m[add] = m_ret[i];
+					m[add - addShift] = m_ret[i];
 				//由于指令实际长度比预留空间短，在该指令后面的标签需要往前凑
 				if (len < pendLen)
 				{
@@ -581,7 +593,8 @@ void generate(string path, string arg = "")
 				}
 		}
 	}
-	add = 0;
+	add = wAdd;
+	int retLen = 0;
 	int emptyCount = 0;
 	for (i = 0; add < insLenAll && i < 0x200000; i++)
 	{
@@ -590,11 +603,17 @@ void generate(string path, string arg = "")
 			continue;
 			emptyCount++;
 		}
-		mem[add++] = m[i];
+		retLen++;
+		if (mm == NULL)
+			mem[add++] = m[i];
+		else
+			mm[add++] = m[i];
 	}
 _g_end:file.close();
-	delete[] m;
-	return;
+	delete[] line;
+	if (mm == NULL)
+		delete[] m;
+	return retLen;
 }
 
 fInit initF[65535];
@@ -746,7 +765,10 @@ int mainLoop()
 				file.close();
 				break;
 			case 'g':
-				generate(filePath, m_arg[0]);
+				if (m_arg[0] == "")
+					generate(filePath, 0);
+				else
+					generate(filePath, toNum(m_arg[0]));
 				break;
 			case 'i':
 				init();
