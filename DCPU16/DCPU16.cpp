@@ -326,8 +326,10 @@ defList defLst;
 bool preprocesser(string path)
 {
 	ifstream mfin(path);
-	ofstream fout("pp_" + path);
+	ofstream fout("pp_temp");
 
+	mfin.close();
+	fout.close();
 	return false;
 }
 
@@ -335,7 +337,7 @@ int generate(string path, USHORT wAdd = 0)
 {
 	if (preprocesser(path))
 		return -1;
-	ifstream file("pp_" + path);
+	ifstream file("pp_temp");
 	if (!file.is_open())
 	{
 		cout << "  ^ Error" << endl;
@@ -422,10 +424,6 @@ int generate(string path, USHORT wAdd = 0)
 						defLst.erase(defItr);
 						break;
 					}
-			}
-			else if (ppCmd == "include")
-			{
-				
 			}
 			else
 			{
