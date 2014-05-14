@@ -321,34 +321,42 @@ struct defItem
 };
 typedef list<defItem> defList;
 
-bool joined[0x200000];
-
-labelList lblLst;
-pendList pendLst;
-USHORT sysLblCount = 0;
-
 defList defLst;
 
-int generate(string path, USHORT wAdd = 0, int * mm = NULL)
+bool preprocesser(string path)
 {
-	ifstream file(path);
+	ifstream mfin(path);
+	ofstream fout("pp_" + path);
+}
+
+int generate(string path, USHORT wAdd = 0)
+{
+	if (!preprocesser(path))
+		return -1;
+	ifstream file("pp_" + path);
 	if (!file.is_open())
 	{
 		cout << "  ^ Error" << endl;
-		return 0;
+		return -1;
 	}
+
+	int result = 0;
 
 	char *line = new char[65536];
 	int lineCount = 0;
 	string insline;
 	int markPos = string::npos;
-	
+	USHORT sysLblCount = 0;
 	string sysLabel;
+
+	labelList lblLst;
+	pendList pendLst;
 	string lbl;
 	int pendCount = 0;
 	labelList::iterator lblBeg, lblItr, lblEnd;
 	list<labelList::iterator> lblUsedLst;
 	list<labelList::iterator>::const_iterator usedItr, usedEnd;
+	pendList pendRet;
 	pendItem pendItm;
 
 	string ppCmd, ppArg;
@@ -357,16 +365,10 @@ int generate(string path, USHORT wAdd = 0, int * mm = NULL)
 	USHORT add = wAdd, addShift = wAdd;
 	int len = 0, pendLen = 3, i;
 	int *m = new int[0x200000];
-	if (mm == NULL)
-	{
-		sysLblCount = 0;
-		lblLst.clear();
-		pendLst.clear();
-		defLst.clear();
-	}
+	bool *joined = new bool[0x200000];
 
 	memset(m, -1, sizeof(int) * 0x200000);
-	memset(joined, false, sizeof(joined));
+	memset(joined, false, sizeof(bool)* 0x200000);
 	while (!file.eof())
 	{
 		lineCount++;
@@ -426,7 +428,8 @@ int generate(string path, USHORT wAdd = 0, int * mm = NULL)
 			}
 			else
 			{
-				cout << lineCount << ":Undefined preprocess command" << endl;
+				cout << path << ':' << lineCount << ":Undefined preprocess command" << endl;
+				result = -1;
 				goto _g_end;
 			}
 			continue;
@@ -490,11 +493,13 @@ int generate(string path, USHORT wAdd = 0, int * mm = NULL)
 		switch (len)
 		{
 			case _ERR_ASM_NOT_SUPPORTED:
-				cout << lineCount << ":Instruction " << line << " is not supported" << endl;
+				cout << path << ':' << lineCount << ":Instruction " << line << " is not supported" << endl;
+				result = -1;
 				goto _g_end;
 			case _ERR_ASM_ILLEGAL:
 			case _ERR_ASM_ILLEGAL_OP:
-				cout << lineCount << ":Illegal instruction " << line << endl;
+				cout << path << ':' << lineCount << ":Illegal instruction " << line << endl;
+				result = -1;
 				goto _g_end;
 			case _ERR_ASM_ILLEGAL_ARG:
 				pendLst.push_back(pendItem(insline, add, 0x20, lineCount));
@@ -519,6 +524,11 @@ int generate(string path, USHORT wAdd = 0, int * mm = NULL)
 		pendLst.pop_front();
 		insline = pendItm.str;
 		add = pendItm.pos;
+		if (add < addShift)
+		{
+			pendRet.push_back(pendItm);
+			continue;
+		}
 		joined[add - addShift] = false;
 		pendLen = pendItm.len;
 		for (i = 0; i < pendLen; i++)
@@ -558,12 +568,17 @@ int generate(string path, USHORT wAdd = 0, int * mm = NULL)
 		switch (len)
 		{
 			case _ERR_ASM_NOT_SUPPORTED:
-				cout << pendItm.lineN << ":Instruction " << pendItm.str << " is not supported" << endl;
+				cout << path << ':' << pendItm.lineN << ":Instruction " << pendItm.str << " is not supported" << endl;
+				result = -1;
 				goto _g_end;
 			case _ERR_ASM_ILLEGAL:
 			case _ERR_ASM_ILLEGAL_OP:
+				cout << path << ':' << pendItm.lineN << ":Illegal instruction " << pendItm.str << endl;
+				result = -1;
+				goto _g_end;
 			case _ERR_ASM_ILLEGAL_ARG:
-				cout << pendItm.lineN << ":Illegal instruction " << insline << endl;
+				cout << path << ':' << pendItm.lineN << ":Illegal instruction " << pendItm.str << endl;
+				result = -1;
 				goto _g_end;
 			default:
 				for (i = 0; i < len; i++, add++)
@@ -593,6 +608,11 @@ int generate(string path, USHORT wAdd = 0, int * mm = NULL)
 				}
 		}
 	}
+	while (!pendRet.empty())
+	{
+		pendLst.push_back(pendRet.front());
+		pendRet.pop_front();
+	}
 	add = wAdd;
 	int retLen = 0;
 	int emptyCount = 0;
@@ -604,16 +624,13 @@ int generate(string path, USHORT wAdd = 0, int * mm = NULL)
 			emptyCount++;
 		}
 		retLen++;
-		if (mm == NULL)
-			mem[add++] = m[i];
-		else
-			mm[add++] = m[i];
+		mem[add++] = m[i];
 	}
+	result = retLen;
 _g_end:file.close();
 	delete[] line;
-	if (mm == NULL)
-		delete[] m;
-	return retLen;
+	delete[] m;
+	return result;
 }
 
 fInit initF[65535];

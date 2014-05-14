@@ -132,6 +132,7 @@ extern "C" __declspec(dllexport) int init()
 	mfStart = 0;
 	usrMP = false;
 	mpStart = 0;
+	keyList.clear();
 	if (hWnd != NULL)
 		PostMessage(hWnd, 0xFFFF, 0, 0);
 	return 0;
