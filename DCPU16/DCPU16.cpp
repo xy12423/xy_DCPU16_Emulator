@@ -271,12 +271,16 @@ struct pendItem
 	std::string str;
 	USHORT pos;
 	int len;
+	std::string file;
+	int lineN;
 	pendItem(){};
-	pendItem(std::string _str, USHORT _pos, int _len)
+	pendItem(std::string _str, USHORT _pos, int _len, std::string _file, int _lineN)
 	{
 		str = _str;
 		pos = _pos;
 		len = _len;
+		file = _file;
+		lineN = _lineN;
 	}
 };
 typedef list<pendItem> pendList;
@@ -300,19 +304,155 @@ struct label
 };
 typedef list<label> labelList;
 
-bool joined[65536];
-
-void generate(string path, string arg = "")
+struct defItem
 {
-	ifstream file(path);
-	if (!file.is_open())
+	std::string name, val;
+	defItem(){};
+	defItem(std::string _name, std::string _val)
+	{
+		name = _name;
+		val = _val;
+	}
+	bool operator <(const defItem &n)
+	{
+		return name.length() > n.name.length();
+	}
+	bool operator >(const defItem &n)
+	{
+		return name.length() < n.name.length();
+	}
+};
+typedef list<defItem> defList;
+
+bool preprocess(string path)
+{
+	list<ifstream> finLst;
+	list<ifstream>::iterator fin;
+	finLst.push_back(ifstream(path));
+	list<string> fileName;
+	fin = finLst.end();
+	fin--;
+	if (!fin->is_open())
 	{
 		cout << "  ^ Error" << endl;
-		return;
+		return true;
 	}
+	ofstream fout("pp_temp");
 
 	char *line = new char[65536];
 	int lineCount = 0;
+	string insline;
+	string ppCmd, ppArg;
+	bool printLine;
+
+	while (!finLst.empty())
+	{
+		printLine = true;
+		fin->getline(line, 65536, '\n');
+		insline = line;
+		trim(insline);
+		if (insline.length() > 0)
+		{
+			if (insline.front() == '#')
+			{
+				insline.erase(0, 1);
+				int markPos = insline.find(' ');
+				if (markPos == string::npos)
+				{
+					ppCmd = insline;
+					ppArg = "";
+				}
+				else
+				{
+					ppCmd = insline.substr(0, markPos);
+					ppArg = insline.substr(markPos + 1);
+				}
+				trim(ppCmd);
+				lcase(ppCmd);
+				trim(ppArg);
+				if (ppCmd == "include")
+				{
+					ifstream icFile(ppArg);
+					if (!icFile.is_open())
+					{
+						cout << "Preprocesser:file " << ppArg << " not found";
+						while (!finLst.empty())
+						{
+							finLst.end()->close();
+							finLst.pop_back();
+						}
+						fout.close();
+						return true;
+					}
+					icFile.close();
+					fout << "#file " << ppArg << endl;
+					finLst.push_back(ifstream(ppArg));
+					fin = finLst.end();
+					if (!finLst.empty())
+						fin--;
+					fileName.push_back(ppArg);
+					printLine = false;
+				}
+				else if (ppCmd == "file" || ppCmd == "/file")
+				{
+					cout << "Preprocesser:Illegal preprocess command #file";
+					while (!finLst.empty())
+					{
+						finLst.end()->close();
+						finLst.pop_back();
+					}
+					fout.close();
+					return true;
+				}
+			}
+		}
+		if (printLine)
+			fout << line << endl;
+		if (fin->eof())
+		{
+			fin->close();
+			finLst.pop_back();
+			fin = finLst.end();
+			if (!finLst.empty())
+				fin--;
+			if (!fileName.empty())
+			{
+				fout << "#/file " << fileName.back() << endl;
+				fileName.pop_back();
+			}
+		}
+	}
+
+	while (!finLst.empty())
+	{
+		finLst.end()->close();
+		finLst.pop_back();
+	}
+	fout.close();
+	return false;
+}
+
+int generate(string path, USHORT wAdd = 0)
+{
+	if (preprocess(path))
+		return -1;
+	ifstream file("pp_temp");
+	list<string> fileName;
+	list<int> lineCountLst;
+	list<int>::iterator lineCount;
+	fileName.push_back(path);
+	lineCountLst.push_back(0);
+	lineCount = lineCountLst.end();
+	lineCount--;
+	if (!file.is_open())
+	{
+		cout << "  ^ Error" << endl;
+		return -1;
+	}
+
+	int result = 0;
+
+	char *line = new char[65536];
 	string insline;
 	int markPos = string::npos;
 	USHORT sysLblCount = 0;
@@ -327,20 +467,95 @@ void generate(string path, string arg = "")
 	list<labelList::iterator>::const_iterator usedItr, usedEnd;
 	pendItem pendItm;
 
-	USHORT add = toNum(arg);
+	string ppCmd, ppArg;
+	defList defLst;
+	defList::iterator defItr, defEnd;
+
+	USHORT add = wAdd, addShift = wAdd;
 	int len = 0, pendLen = 3, i;
 	int *m = new int[0x200000];
+	bool *joined = new bool[0x200000];
 
 	memset(m, -1, sizeof(int) * 0x200000);
-	memset(joined, false, sizeof(joined));
+	memset(joined, false, sizeof(bool)* 0x200000);
 	while (!file.eof())
 	{
-		lineCount++;
+		(*lineCount)++;
 		file.getline(line, 65536, '\n');
 		insline = line;
 		trim(insline);
 		if (insline.length() < 1)
 			continue;
+		if (insline.front() == '#')
+		{
+			insline.erase(0, 1);
+			markPos = insline.find(' ');
+			if (markPos == string::npos)
+			{
+				ppCmd = insline;
+				ppArg = "";
+			}
+			else
+			{
+				ppCmd = insline.substr(0, markPos);
+				ppArg = insline.substr(markPos + 1);
+			}
+			trim(ppCmd);
+			lcase(ppCmd);
+			trim(ppArg);
+			if (ppCmd == "define")
+			{
+				markPos = ppArg.find(' ');
+				if (markPos == string::npos)
+				{
+					ppCmd = ppArg;
+					ppArg = "";
+				}
+				else
+				{
+					ppCmd = ppArg.substr(0, markPos);
+					ppArg = ppArg.substr(markPos + 1);
+				}
+				defItem newDefItm(ppCmd, ppArg);
+				defEnd = defLst.end();
+				for (defItr = defLst.begin(); defItr != defEnd; defItr++)
+					if ((*defItr) > newDefItm)
+						break;
+				defLst.insert(defItr, newDefItm);
+			}
+			else if (ppCmd == "undef")
+			{
+				defEnd = defLst.end();
+				for (defItr = defLst.begin(); defItr != defEnd; defItr++)
+					if (defItr->name == ppArg)
+					{
+						defLst.erase(defItr);
+						break;
+					}
+			}
+			else if (ppCmd == "file")
+			{
+				fileName.push_back(ppArg);
+				lineCountLst.push_back(0);
+				lineCount = lineCountLst.end();
+				lineCount--;
+			}
+			else if (ppCmd == "/file")
+			{
+				fileName.pop_back();
+				lineCountLst.pop_back();
+				lineCount = lineCountLst.end();
+				if (!lineCountLst.empty())
+					lineCount--;
+			}
+			else
+			{
+				cout << fileName.back() << ':' << *lineCount << ":Undefined preprocess command" << endl;
+				result = -1;
+				goto _g_end;
+			}
+			continue;
+		}
 		markPos = insline.find(';');
 		if (markPos != string::npos)
 		{
@@ -386,29 +601,40 @@ void generate(string path, string arg = "")
 		}
 		if (insline.length() < 1)
 			continue;
+		defEnd = defLst.end();
+		for (defItr = defLst.begin(); defItr != defEnd; defItr++)
+		{
+			markPos = insline.find(defItr->name);
+			while (markPos != string::npos)
+			{
+				insline = insline.substr(0, markPos) + defItr->val + insline.substr(markPos + defItr->name.length());
+				markPos = insline.find(defItr->name);
+			}
+		}
 		len = assembler(insline, m_ret, INS_RET_LEN);
 		switch (len)
 		{
 			case _ERR_ASM_NOT_SUPPORTED:
-				cout << "Instruction in line " << lineCount << " is not supported" << endl;
+				cout << fileName.back() << ':' << *lineCount << ":Instruction " << line << " is not supported" << endl;
+				result = -1;
 				goto _g_end;
 			case _ERR_ASM_ILLEGAL:
 			case _ERR_ASM_ILLEGAL_OP:
-				cout << "Illegal instruction in line " << lineCount << endl;
+				cout << fileName.back() << ':' << *lineCount << ":Illegal instruction " << line << endl;
+				result = -1;
 				goto _g_end;
 			case _ERR_ASM_ILLEGAL_ARG:
-				pendLst.push_back(pendItem(insline, add, 0x20));
-				joined[add] = true;
+				pendLst.push_back(pendItem(insline, add, 0x20, fileName.back(), *lineCount));
+				joined[add - addShift] = true;
 				//为含有未能识别的标签的代码留出空间
 				add += 0x20;
 				pendCount++;
 				break;
 			default:
 				for (i = 0; i < len; i++, add++)
-					m[add] = m_ret[i];
+					m[add - addShift] = m_ret[i];
 		}
 	}
-	delete[] line;
 	lblLst.sort();	//按标签长度从大到小排序以解决长标签与短标签内容部分重复时长标签被部分替换的问题
 	lblBeg = lblLst.begin();
 	lblEnd = lblLst.end();
@@ -420,10 +646,16 @@ void generate(string path, string arg = "")
 		pendLst.pop_front();
 		insline = pendItm.str;
 		add = pendItm.pos;
-		joined[add] = false;
+		if (add < addShift)
+		{
+			cout << "Assembler Error" << endl;
+			cout << "Please send your program to the developer" << endl;
+			goto _g_end;
+		}
+		joined[add - addShift] = false;
 		pendLen = pendItm.len;
 		for (i = 0; i < pendLen; i++)
-			m[add + i] = -1;
+			m[add + i - addShift] = -1;
 		lblUsedLst.clear();
 		for (lblItr = lblBeg; lblItr != lblEnd; lblItr++)
 		{
@@ -459,16 +691,18 @@ void generate(string path, string arg = "")
 		switch (len)
 		{
 			case _ERR_ASM_NOT_SUPPORTED:
-				cout << "Instruction " << pendItm.str << " is not supported" << endl;
+				cout << pendItm.file << ':' << pendItm.lineN << ":Instruction " << pendItm.str << " is not supported" << endl;
+				result = -1;
 				goto _g_end;
 			case _ERR_ASM_ILLEGAL:
 			case _ERR_ASM_ILLEGAL_OP:
 			case _ERR_ASM_ILLEGAL_ARG:
-				cout << "Illegal instruction " << insline << endl;
+				cout << pendItm.file << ':' << pendItm.lineN << ":Illegal instruction " << pendItm.str << endl;
+				result = -1;
 				goto _g_end;
 			default:
 				for (i = 0; i < len; i++, add++)
-					m[add] = m_ret[i];
+					m[add - addShift] = m_ret[i];
 				//由于指令实际长度比预留空间短，在该指令后面的标签需要往前凑
 				if (len < pendLen)
 				{
@@ -494,7 +728,8 @@ void generate(string path, string arg = "")
 				}
 		}
 	}
-	add = 0;
+	add = wAdd;
+	int retLen = 0;
 	int emptyCount = 0;
 	for (i = 0; add < insLenAll && i < 0x200000; i++)
 	{
@@ -503,11 +738,14 @@ void generate(string path, string arg = "")
 			continue;
 			emptyCount++;
 		}
+		retLen++;
 		mem[add++] = m[i];
 	}
+	result = retLen;
 _g_end:file.close();
+	delete[] line;
 	delete[] m;
-	return;
+	return result;
 }
 
 fInit initF[65535];
@@ -659,7 +897,10 @@ int mainLoop()
 				file.close();
 				break;
 			case 'g':
-				generate(filePath, m_arg[0]);
+				if (m_arg[0] == "")
+					generate(filePath, 0);
+				else
+					generate(filePath, toNum(m_arg[0]));
 				break;
 			case 'i':
 				init();

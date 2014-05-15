@@ -6,10 +6,71 @@
 #include <string>
 #include "define.h"
 #include "function.h"
-#include "preprocess.h"
 #include "switch.h"
 
 int errD = 0;
+
+void preprcs(std::string &op, std::string &b, std::string &a, int &codeType)
+{
+	switch (op.front())
+	{
+		case 'c':
+			if (op == "call")
+			{
+				if (codeType == 1)
+				{
+					b = a;
+					a = "";
+					codeType = 2;
+				}
+			}
+			break;
+		case 'd':
+			if (op == "dat")
+			{
+				if (b != "")
+				{
+					a = b + "," + a;
+					b = "";
+					codeType = 1;
+				}
+			}
+			break;
+		case 'g':
+			if (op == "goto")
+			{
+				op = "set";
+				b = "pc";
+				codeType = 2;
+			}
+			break;
+		case 'm':
+			if (op == "mov")
+				op = "set";
+			break;
+		case 'p':
+			if (op == "pop")
+			{
+				op = "set";
+				b = a;
+				a = "pop";
+				codeType = 2;
+			}
+			else if (op == "push")
+			{
+				op = "set";
+				b = "push";
+				codeType = 2;
+			}
+			break;
+	}
+	int bracketPos = b.find('[');
+	if (bracketPos != std::string::npos && bracketPos != 0 && b.back() == ']')
+		b = "[" + b.substr(0, bracketPos) + "+" + b.substr(bracketPos + 1);
+	bracketPos = a.find('[');
+	if (bracketPos != std::string::npos && bracketPos != 0 && a.back() == ']')
+		a = "[" + a.substr(0, bracketPos) + "+" + a.substr(bracketPos + 1);
+}
 
 int assembler(std::string code, USHORT ret[], int retLen)
 {

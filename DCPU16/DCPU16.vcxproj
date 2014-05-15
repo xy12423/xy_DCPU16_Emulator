@@ -85,7 +85,6 @@
     <ClInclude Include="core\assembler\assembler.h" />
     <ClInclude Include="core\assembler\define.h" />
     <ClInclude Include="core\assembler\function.h" />
-    <ClInclude Include="core\assembler\preprocess.h" />
     <ClInclude Include="core\assembler\switch.h" />
     <ClInclude Include="core\emulator\define.h" />
     <ClInclude Include="core\emulator\emulator.h" />

@@ -51,9 +51,6 @@
     <ClInclude Include="core\assembler\function.h">
       <Filter>Assembler</Filter>
     </ClInclude>
-    <ClInclude Include="core\assembler\preprocess.h">
-      <Filter>Assembler</Filter>
-    </ClInclude>
     <ClInclude Include="core\assembler\switch.h">
       <Filter>Assembler</Filter>
     </ClInclude>
