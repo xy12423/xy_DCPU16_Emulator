@@ -270,13 +270,16 @@ struct pendItem
 {
 	std::string str;
 	USHORT pos;
-	int len, lineN;
+	int len;
+	std::string file;
+	int lineN;
 	pendItem(){};
-	pendItem(std::string _str, USHORT _pos, int _len, int _lineN)
+	pendItem(std::string _str, USHORT _pos, int _len, std::string _file, int _lineN)
 	{
 		str = _str;
 		pos = _pos;
 		len = _len;
+		file = _file;
 		lineN = _lineN;
 	}
 };
@@ -321,23 +324,126 @@ struct defItem
 };
 typedef list<defItem> defList;
 
-defList defLst;
-
-bool preprocesser(string path)
+bool preprocess(string path)
 {
-	ifstream mfin(path);
+	list<ifstream> finLst;
+	list<ifstream>::iterator fin;
+	finLst.push_back(ifstream(path));
+	list<string> fileName;
+	fin = finLst.end();
+	fin--;
+	if (!fin->is_open())
+	{
+		cout << "  ^ Error" << endl;
+		return true;
+	}
 	ofstream fout("pp_temp");
 
-	mfin.close();
+	char *line = new char[65536];
+	int lineCount = 0;
+	string insline;
+	string ppCmd, ppArg;
+	bool printLine;
+
+	while (!finLst.empty())
+	{
+		printLine = true;
+		fin->getline(line, 65536, '\n');
+		insline = line;
+		trim(insline);
+		if (insline.length() > 0)
+		{
+			if (insline.front() == '#')
+			{
+				insline.erase(0, 1);
+				int markPos = insline.find(' ');
+				if (markPos == string::npos)
+				{
+					ppCmd = insline;
+					ppArg = "";
+				}
+				else
+				{
+					ppCmd = insline.substr(0, markPos);
+					ppArg = insline.substr(markPos + 1);
+				}
+				trim(ppCmd);
+				lcase(ppCmd);
+				trim(ppArg);
+				if (ppCmd == "include")
+				{
+					ifstream icFile(ppArg);
+					if (!icFile.is_open())
+					{
+						cout << "Preprocesser:file " << ppArg << " not found";
+						while (!finLst.empty())
+						{
+							finLst.end()->close();
+							finLst.pop_back();
+						}
+						fout.close();
+						return true;
+					}
+					icFile.close();
+					fout << "#file " << ppArg << endl;
+					finLst.push_back(ifstream(ppArg));
+					fin = finLst.end();
+					if (!finLst.empty())
+						fin--;
+					fileName.push_back(ppArg);
+					printLine = false;
+				}
+				else if (ppCmd == "file" || ppCmd == "/file")
+				{
+					cout << "Preprocesser:Illegal preprocess command #file";
+					while (!finLst.empty())
+					{
+						finLst.end()->close();
+						finLst.pop_back();
+					}
+					fout.close();
+					return true;
+				}
+			}
+		}
+		if (printLine)
+			fout << line << endl;
+		if (fin->eof())
+		{
+			fin->close();
+			finLst.pop_back();
+			fin = finLst.end();
+			if (!finLst.empty())
+				fin--;
+			if (!fileName.empty())
+			{
+				fout << "#/file " << fileName.back() << endl;
+				fileName.pop_back();
+			}
+		}
+	}
+
+	while (!finLst.empty())
+	{
+		finLst.end()->close();
+		finLst.pop_back();
+	}
 	fout.close();
 	return false;
 }
 
 int generate(string path, USHORT wAdd = 0)
 {
-	if (preprocesser(path))
+	if (preprocess(path))
 		return -1;
 	ifstream file("pp_temp");
+	list<string> fileName;
+	list<int> lineCountLst;
+	list<int>::iterator lineCount;
+	fileName.push_back(path);
+	lineCountLst.push_back(0);
+	lineCount = lineCountLst.end();
+	lineCount--;
 	if (!file.is_open())
 	{
 		cout << "  ^ Error" << endl;
@@ -347,7 +453,6 @@ int generate(string path, USHORT wAdd = 0)
 	int result = 0;
 
 	char *line = new char[65536];
-	int lineCount = 0;
 	string insline;
 	int markPos = string::npos;
 	USHORT sysLblCount = 0;
@@ -363,6 +468,7 @@ int generate(string path, USHORT wAdd = 0)
 	pendItem pendItm;
 
 	string ppCmd, ppArg;
+	defList defLst;
 	defList::iterator defItr, defEnd;
 
 	USHORT add = wAdd, addShift = wAdd;
@@ -374,7 +480,7 @@ int generate(string path, USHORT wAdd = 0)
 	memset(joined, false, sizeof(bool)* 0x200000);
 	while (!file.eof())
 	{
-		lineCount++;
+		(*lineCount)++;
 		file.getline(line, 65536, '\n');
 		insline = line;
 		trim(insline);
@@ -394,7 +500,9 @@ int generate(string path, USHORT wAdd = 0)
 				ppCmd = insline.substr(0, markPos);
 				ppArg = insline.substr(markPos + 1);
 			}
+			trim(ppCmd);
 			lcase(ppCmd);
+			trim(ppArg);
 			if (ppCmd == "define")
 			{
 				markPos = ppArg.find(' ');
@@ -425,9 +533,24 @@ int generate(string path, USHORT wAdd = 0)
 						break;
 					}
 			}
+			else if (ppCmd == "file")
+			{
+				fileName.push_back(ppArg);
+				lineCountLst.push_back(0);
+				lineCount = lineCountLst.end();
+				lineCount--;
+			}
+			else if (ppCmd == "/file")
+			{
+				fileName.pop_back();
+				lineCountLst.pop_back();
+				lineCount = lineCountLst.end();
+				if (!lineCountLst.empty())
+					lineCount--;
+			}
 			else
 			{
-				cout << path << ':' << lineCount << ":Undefined preprocess command" << endl;
+				cout << fileName.back() << ':' << *lineCount << ":Undefined preprocess command" << endl;
 				result = -1;
 				goto _g_end;
 			}
@@ -492,16 +615,16 @@ int generate(string path, USHORT wAdd = 0)
 		switch (len)
 		{
 			case _ERR_ASM_NOT_SUPPORTED:
-				cout << path << ':' << lineCount << ":Instruction " << line << " is not supported" << endl;
+				cout << fileName.back() << ':' << *lineCount << ":Instruction " << line << " is not supported" << endl;
 				result = -1;
 				goto _g_end;
 			case _ERR_ASM_ILLEGAL:
 			case _ERR_ASM_ILLEGAL_OP:
-				cout << path << ':' << lineCount << ":Illegal instruction " << line << endl;
+				cout << fileName.back() << ':' << *lineCount << ":Illegal instruction " << line << endl;
 				result = -1;
 				goto _g_end;
 			case _ERR_ASM_ILLEGAL_ARG:
-				pendLst.push_back(pendItem(insline, add, 0x20, lineCount));
+				pendLst.push_back(pendItem(insline, add, 0x20, fileName.back(), *lineCount));
 				joined[add - addShift] = true;
 				//为含有未能识别的标签的代码留出空间
 				add += 0x20;
@@ -568,13 +691,13 @@ int generate(string path, USHORT wAdd = 0)
 		switch (len)
 		{
 			case _ERR_ASM_NOT_SUPPORTED:
-				cout << path << ':' << pendItm.lineN << ":Instruction " << pendItm.str << " is not supported" << endl;
+				cout << pendItm.file << ':' << pendItm.lineN << ":Instruction " << pendItm.str << " is not supported" << endl;
 				result = -1;
 				goto _g_end;
 			case _ERR_ASM_ILLEGAL:
 			case _ERR_ASM_ILLEGAL_OP:
 			case _ERR_ASM_ILLEGAL_ARG:
-				cout << path << ':' << pendItm.lineN << ":Illegal instruction " << pendItm.str << endl;
+				cout << pendItm.file << ':' << pendItm.lineN << ":Illegal instruction " << pendItm.str << endl;
 				result = -1;
 				goto _g_end;
 			default:
