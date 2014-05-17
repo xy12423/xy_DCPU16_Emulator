@@ -590,14 +590,22 @@ int generate(string path, USHORT wAdd = 0)
 					lbl = insline.substr(1, markPos - 1);
 					insline.erase(0, markPos + 1);
 				}
-				lblLst.push_back(label(lbl, add, add));
 			}
 			else
 			{
 				lbl = insline.substr(0, markPos);
 				insline.erase(0, markPos + 1);
-				lblLst.push_back(label(lbl, add, add));
 			}
+			lblItr = lblLst.begin();
+			lblEnd = lblLst.end();
+			for (lblItr = lblLst.begin(); lblItr != lblEnd; lblItr++)
+				if (lblItr->str == lbl)
+				{
+					cout << fileName.back() << ':' << *lineCount << ":Duplicate label:" << lbl << endl;
+					result = -1;
+					goto _g_end;
+				}
+			lblLst.push_back(label(lbl, add, add));
 		}
 		if (insline.length() < 1)
 			continue;

@@ -177,7 +177,12 @@ int assembler(std::string code, USHORT ret[], int retLen)
 						for (pItr = datList->begin(); pItr != pEnd; pItr++)
 						{
 							if (canBeNum(*pItr))
-								ret[codelen++] = toNum(*pItr);
+							{
+								int retn = toNum(*pItr);
+								if (retn > 0xFFFF)
+									return _ERR_ASM_ILLEGAL;
+								ret[codelen++] = retn;
+							}
 							else if (pItr->front() == '[' && pItr->back() == ']')
 							{
 								pItr->erase(0, 1);
