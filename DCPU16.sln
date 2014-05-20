@@ -19,6 +19,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Floppy", "Floppy\Floppy.vcx
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "3DDisplay", "3DDisplay\3DDisplay.vcxproj", "{7CD0D866-FE8F-4817-A1D9-B1901A300D61}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Harddisk", "Harddisk\Harddisk.vcxproj", "{4F97DF85-3D2D-4A24-9E1C-A92AD3662602}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -45,6 +47,10 @@ Global
 		{7CD0D866-FE8F-4817-A1D9-B1901A300D61}.Debug|Win32.Build.0 = Debug|Win32
 		{7CD0D866-FE8F-4817-A1D9-B1901A300D61}.Release|Win32.ActiveCfg = Release|Win32
 		{7CD0D866-FE8F-4817-A1D9-B1901A300D61}.Release|Win32.Build.0 = Release|Win32
+		{4F97DF85-3D2D-4A24-9E1C-A92AD3662602}.Debug|Win32.ActiveCfg = Debug|Win32
+		{4F97DF85-3D2D-4A24-9E1C-A92AD3662602}.Debug|Win32.Build.0 = Debug|Win32
+		{4F97DF85-3D2D-4A24-9E1C-A92AD3662602}.Release|Win32.ActiveCfg = Release|Win32
+		{4F97DF85-3D2D-4A24-9E1C-A92AD3662602}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
