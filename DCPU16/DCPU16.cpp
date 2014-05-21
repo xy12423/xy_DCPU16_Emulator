@@ -432,7 +432,7 @@ bool preprocess(string path)
 	return false;
 }
 
-int generate(string path, USHORT wAdd = 0)
+int generate(string path, USHORT wAdd = 0, bool printLabel = false)
 {
 	if (preprocess(path))
 		return -1;
@@ -486,7 +486,7 @@ int generate(string path, USHORT wAdd = 0)
 		trim(insline);
 		if (insline.length() < 1)
 			continue;
-		if (insline.front() == '#')
+		if (insline.front() == '#') //预处理指令
 		{
 			insline.erase(0, 1);
 			markPos = insline.find(' ');
@@ -557,7 +557,7 @@ int generate(string path, USHORT wAdd = 0)
 			continue;
 		}
 		markPos = insline.find(';');
-		if (markPos != string::npos)
+		if (markPos != string::npos) //注释
 		{
 			if (markPos == 0)
 				insline = "";
@@ -567,17 +567,17 @@ int generate(string path, USHORT wAdd = 0)
 				trim(insline);
 			}
 		}
-		markPos = insline.find('$');
+		markPos = insline.find('$'); //类似于this的东西
 		if (markPos != string::npos)
 		{
 			sysLabel = "__asm_sys_label_" + toHEX(sysLblCount);
 			lblLst.push_back(label(sysLabel, add, add));
 			insline = insline.substr(0, markPos) + sysLabel + insline.substr(markPos + 1);
 		}
-		markPos = insline.find(':');
+		markPos = insline.find(':'); //标签
 		if (markPos != string::npos)
 		{
-			if (markPos == 0)
+			if (markPos == 0) //:***
 			{
 				markPos = insline.find(' ');
 				if (markPos == string::npos)
@@ -591,7 +591,7 @@ int generate(string path, USHORT wAdd = 0)
 					insline.erase(0, markPos + 1);
 				}
 			}
-			else
+			else //***:
 			{
 				lbl = insline.substr(0, markPos);
 				insline.erase(0, markPos + 1);
@@ -681,6 +681,7 @@ int generate(string path, USHORT wAdd = 0)
 		len = assembler(insline, m_ret, INS_RET_LEN);
 		pendItm.len = len;
 		usedEnd = lblUsedLst.cend();
+		//汇编完之后再将指令加入 标签被引用列表 以防止指令长度不对
 		for (usedItr = lblUsedLst.cbegin(); usedItr != usedEnd; usedItr++)
 		{
 			lblItr = *usedItr;
@@ -736,6 +737,11 @@ int generate(string path, USHORT wAdd = 0)
 				}
 		}
 	}
+	if (printLabel)
+	{
+		for (lblItr = lblBeg; lblItr != lblEnd; lblItr++)
+			cout << lblItr->str << ' ' << lblItr->pos << endl;
+	}
 	add = wAdd;
 	int retLen = 0;
 	int emptyCount = 0;
@@ -756,11 +762,28 @@ _g_end:file.close();
 	return result;
 }
 
+void breakpoint(string arg = "")
+{
+	int add = toNum(arg);
+	if (add < 0)
+	{
+		cout << "  ^ Error" << endl;
+		return;
+	}
+	breakPoint[add] = true;
+}
+
+void Continue()
+{
+
+}
+
 fInit initF[65535];
 
 void init()
 {
 	memset(mem, 0, sizeof(mem));
+	memset(breakPoint, false, sizeof(breakPoint));
 	for (int i = 0; i < 8; i++)
 		reg[i] = 0;
 	pc = 0;
@@ -795,6 +818,7 @@ int mainLoop()
 	char _cmd[100];
 	string cmd;
 	string filePath;
+	string *arg;
 	fstream file;
 	char fileDatO = 0;
 	USHORT fileDat = 0;
@@ -905,11 +929,28 @@ int mainLoop()
 				file.close();
 				break;
 			case 'g':
+			{
+				USHORT add = 0;
+				bool labelOut = false;
+				for (i = 0; i < argn; i++)
+				{
+					arg = &m_arg[i];
+					if ((*arg)[0] == '-')
+					{
+						arg->erase(0, 1);
+						if (arg->length() < 1)
+						{
+							cout << "  ^ Error" << endl;
+							break;
+						}
+					}
+				}
 				if (m_arg[0] == "")
 					generate(filePath, 0);
 				else
 					generate(filePath, toNum(m_arg[0]));
 				break;
+			}
 			case 'i':
 				init();
 				break;
@@ -1051,5 +1092,13 @@ int main(int argc, char* argv[], char* envp[])
 #endif
 		delete fname;
 	}
+	memset(mem, 0, sizeof(mem));
+	memset(breakPoint, false, sizeof(breakPoint));
+	for (int i = 0; i < 8; i++)
+		reg[i] = 0;
+	pc = 0;
+	sp = 0;
+	ex = 0;
+	ia = 0;
 	return mainLoop();
 }

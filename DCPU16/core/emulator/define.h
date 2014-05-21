@@ -58,6 +58,8 @@ bool itri = true;
 hardware hwt[65536];
 UINT hwn = 0;
 
+bool breakPoint[0x10000];
+
 #include <cstring>
 #include <ctime>
 

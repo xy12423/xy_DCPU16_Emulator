@@ -4,6 +4,7 @@
 #define _H_EXP
 
 #include "defines.h"
+#include "harddisk.h"
 
 #define HW_COUNT 1
 hardware info[HW_COUNT];
@@ -22,6 +23,17 @@ int __cdecl intrpt()
 
 extern "C" __declspec(dllexport) int init()
 {
+	hdd.open(HDD_FILENAME);
+	if (!hdd.is_open())
+	{
+		std::ofstream tfs(HDD_FILENAME);
+		if (!tfs.is_open())
+			return -1;
+		tfs.close();
+		hdd.open(HDD_FILENAME);
+		if (!hdd.is_open())
+			return -1;
+	}
 	return 0;
 }
 
