@@ -338,6 +338,8 @@ void doCodeThread()
 		cycle = doCode();
 		if (cycle < 1)
 			return;
+		if (breakPoint[pc])
+			return;
 		cyclePassed += cycle;
 	}
 }

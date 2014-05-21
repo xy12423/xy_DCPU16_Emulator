@@ -740,7 +740,7 @@ int generate(string path, USHORT wAdd = 0, bool printLabel = false)
 	if (printLabel)
 	{
 		for (lblItr = lblBeg; lblItr != lblEnd; lblItr++)
-			cout << lblItr->str << ' ' << lblItr->pos << endl;
+			cout << lblItr->str << " 0x" << toHEX(lblItr->pos) << endl;
 	}
 	add = wAdd;
 	int retLen = 0;
@@ -773,11 +773,6 @@ void breakpoint(string arg = "")
 	breakPoint[add] = true;
 }
 
-void Continue()
-{
-
-}
-
 fInit initF[65535];
 
 void init()
@@ -798,6 +793,7 @@ void init()
 void printUsage()
 {
 	cout << "assemble\tA [address]" << endl;		//
+	cout << "breakpoint\tB address" << endl;		//
 	cout << "dump\t\tD [address]" << endl;			//
 	cout << "enter\t\tE address [list]" << endl;	//
 	cout << "generate\tG [address]" << endl;		//
@@ -818,11 +814,6 @@ int mainLoop()
 	char _cmd[100];
 	string cmd;
 	string filePath;
-	string *arg;
-	fstream file;
-	char fileDatO = 0;
-	USHORT fileDat = 0;
-	int filePtr = 0, fileEndPtr = 0;
 	int i, argn;
 	cout << '-';
 	while (true)
@@ -896,8 +887,11 @@ int mainLoop()
 				filePath = m_arg[0];
 				break;
 			case 'l':
-				if (file.is_open())
-					file.close();
+			{
+				fstream file;
+				char fileDatO = 0;
+				USHORT fileDat = 0;
+				int filePtr = 0;
 				file.open(filePath, ios::in | ios::binary);
 				filePtr = (USHORT)(toNum(m_arg[0]));
 				if (!file.is_open())
@@ -915,7 +909,13 @@ int mainLoop()
 				}
 				file.close();
 				break;
+			}
 			case 'w':
+			{
+				fstream file;
+				char fileDatO = 0;
+				USHORT fileDat = 0;
+				int filePtr = 0, fileEndPtr = 0;
 				if (file.is_open())
 					file.close();
 				file.open(filePath, ios::out | ios::binary | ios::trunc);
@@ -928,10 +928,12 @@ int mainLoop()
 				}
 				file.close();
 				break;
+			}
 			case 'g':
 			{
 				USHORT add = 0;
 				bool labelOut = false;
+				string *arg;
 				for (i = 0; i < argn; i++)
 				{
 					arg = &m_arg[i];
@@ -943,16 +945,29 @@ int mainLoop()
 							cout << "  ^ Error" << endl;
 							break;
 						}
+						if ((*arg) == "a")
+						{
+							i++;
+							add = toNum(m_arg[i]);
+						}
+						else if ((*arg) == "-lo")
+						{
+							i++;
+							if (m_arg[i] == "true")
+								labelOut = true;
+							else
+								labelOut = false;
+						}
 					}
 				}
-				if (m_arg[0] == "")
-					generate(filePath, 0);
-				else
-					generate(filePath, toNum(m_arg[0]));
+				generate(filePath, add, labelOut);
 				break;
 			}
 			case 'i':
 				init();
+				break;
+			case 'b':
+				breakpoint(m_arg[0]);
 				break;
 			default:
 				cout << "  ^ Error" << endl;
