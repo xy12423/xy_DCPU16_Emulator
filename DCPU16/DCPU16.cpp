@@ -7,11 +7,17 @@ using namespace std;
 USHORT m_ret[INS_RET_LEN];
 string m_arg[INS_RET_LEN];
 
+void doCodeThreadS()
+{
+	doCodeThread();
+	cout << "Process stopped.Press any key to continue." << endl;
+}
+
 #ifdef _P_WIN
 DWORD threadID = 0;
 DWORD WINAPI doCodeThreadBegin(LPVOID lpParam)
 {
-	doCodeThread();
+	doCodeThreadS();
 	return 0;
 }
 #endif
@@ -25,11 +31,11 @@ void doCodeThreadStarter()
 #ifdef _P_LIN
 	pthread_attr_init(&attr);
 	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
-	pthread_create(&tid, &attr, &doCodeThread, NULL);
+	pthread_create(&tid, &attr, &doCodeThreadS, NULL);
 #endif
 #ifdef _P_NA
 #ifdef __CPP11_thread
-	thread em(doCodeThread);
+	thread em(doCodeThreadS);
 	em.detach();
 #endif
 #endif
@@ -792,20 +798,20 @@ void init()
 
 void printUsage()
 {
-	cout << "assemble\tA [address]" << endl;		//
-	cout << "breakpoint\tB address" << endl;		//
-	cout << "dump\t\tD [address]" << endl;			//
-	cout << "enter\t\tE address [list]" << endl;	//
-	cout << "generate\tG [address]" << endl;		//
-	cout << "initialize\tI" << endl;				//
-	cout << "load\t\tL address" << endl;			//
-	cout << "name\t\tN path" << endl;				//
-	cout << "proceed\t\tP" << endl;					//
-	cout << "quit\t\tQ" << endl;					//
-	cout << "register\tR [register]" << endl;		//
-	cout << "trace\t\tT [end]" << endl;				//
-	cout << "unassemble\tU [address]" << endl;		//
-	cout << "write\t\tW start end" << endl;			//
+	cout << "assemble\tA [address]" << endl;							//
+	cout << "breakpoint\tB address" << endl;							//
+	cout << "dump\t\tD [address]" << endl;								//
+	cout << "enter\t\tE address [list]" << endl;						//
+	cout << "generate\tG [-a address] [--lo true/false]" << endl;		//
+	cout << "initialize\tI" << endl;									//
+	cout << "load\t\tL address" << endl;								//
+	cout << "name\t\tN path" << endl;									//
+	cout << "proceed\t\tP" << endl;										//
+	cout << "quit\t\tQ" << endl;										//
+	cout << "register\tR [register]" << endl;							//
+	cout << "trace\t\tT [end]" << endl;									//
+	cout << "unassemble\tU [address]" << endl;							//
+	cout << "write\t\tW start end" << endl;								//
 	return;
 }
 
@@ -955,8 +961,13 @@ int mainLoop()
 							i++;
 							if (m_arg[i] == "true")
 								labelOut = true;
-							else
+							else if (m_arg[i] == "false")
 								labelOut = false;
+							else
+							{
+								cout << "  ^ Error" << endl;
+								break;
+							}
 						}
 					}
 				}

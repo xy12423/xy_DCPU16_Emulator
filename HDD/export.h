@@ -9,7 +9,7 @@
 #define HW_COUNT 1
 hardware info[HW_COUNT];
 
-int __cdecl intrpt()
+int _cdecl intrpt()
 {
 	USHORT itr = 0;
 	int cycle = 0;
@@ -21,7 +21,7 @@ int __cdecl intrpt()
 	return cycle;
 }
 
-extern "C" __declspec(dllexport) int init()
+extern "C" __declspec(dllexport) int _cdecl init()
 {
 	hdd.open(HDD_FILENAME);
 	if (!hdd.is_open())
@@ -37,17 +37,17 @@ extern "C" __declspec(dllexport) int init()
 	return 0;
 }
 
-extern "C" __declspec(dllexport) int __cdecl getHWCount()
+extern "C" __declspec(dllexport) int _cdecl getHWCount()
 {
 	return HW_COUNT;
 }
 
-extern "C" __declspec(dllexport) hardware __cdecl getInfo(int count)
+extern "C" __declspec(dllexport) hardware _cdecl getInfo(int count)
 {
 	return info[count];
 }
 
-extern "C" __declspec(dllexport) void __cdecl setHandle(void *p1, void *p2, void *p3, void *p4, void *p5)
+extern "C" __declspec(dllexport) void _cdecl setHandle(void *p1, void *p2, void *p3, void *p4, void *p5)
 {
 	setMem = (fSet)(p1);
 	getMem = (fGet)(p2);

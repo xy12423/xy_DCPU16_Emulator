@@ -16,7 +16,7 @@ struct opcode
 	USHORT op, b, a;
 };
 
-typedef int(__cdecl *fHWInt)();
+typedef int(_cdecl *fHWInt)();
 
 struct hardware
 {
@@ -26,10 +26,10 @@ struct hardware
 
 hardware hdEmpty;
 
-typedef int(__cdecl *fGetHWCount)();
-typedef hardware(__cdecl *fGetInfo)(int n);
-typedef void(__cdecl *fSetHandle)(void *, void *, void *, void *, void *);
-typedef int(__cdecl *fInit)();
+typedef int(_cdecl *fGetHWCount)();
+typedef hardware(_cdecl *fGetInfo)(int n);
+typedef void(_cdecl *fSetHandle)(void *, void *, void *, void *, void *);
+typedef int(_cdecl *fInit)();
 
 #define _ERR_EMU_NOERR 0
 #define _ERR_EMU_OTHER -1
