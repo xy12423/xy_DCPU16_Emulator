@@ -26,7 +26,7 @@ typedef int(_cdecl *fAdditr)(USHORT);
 
 fSet setMem, setReg;
 fGet getMem, getReg;
-fAdditr additr;
+fAdditr addItr;
 
 #define REG_A 0x0
 #define REG_B 0x1
@@ -40,5 +40,21 @@ fAdditr additr;
 #define REG_SP 0x9
 #define REG_EX 0xA
 #define REG_IA 0xB
+
+#define HDD_STATE_NO_PLATTER 0x0000
+#define HDD_STATE_READY 0x0001
+#define HDD_STATE_BUSY 0x0002
+
+#define HDD_ERROR_NO_ERROR 0x0000
+#define HDD_ERROR_BUSY 0x0001
+#define HDD_ERROR_NO_PLATTER 0x0002
+#define HDD_ERROR_BAD_PLATTER 0x0003
+#define HDD_ERROR_BAD_SECTOR 0x0003
+
+#define VER_HI 0x00
+#define VER_LO 0x01
+
+#define SIZE_SECTOR 512
+#define SIZE_PLATTER 1024
 
 #endif
