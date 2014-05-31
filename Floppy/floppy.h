@@ -11,6 +11,7 @@ volatile USHORT floppyError = FLOPPY_ERROR_NONE;
 int track = -1;
 string floppyPath;
 volatile USHORT throwItrpt = 0;
+volatile int wordRW = 0;
 
 struct FloppyInfo
 {
@@ -84,6 +85,11 @@ int LoadDisk(string _path)
 	return ret;
 }
 
+void CALLBACK FloppyTimer(UINT uTimerID, UINT uMsg, DWORD_PTR dwUser, DWORD_PTR dw1, DWORD_PTR dw2)
+{
+	wordRW = 307;
+}
+
 DWORD WINAPI FloppyThreadRead(LPVOID lpParam)
 {
 	USHORT pastState = floppyState;
@@ -103,7 +109,13 @@ DWORD WINAPI FloppyThreadRead(LPVOID lpParam)
 	while (clock() - start < trackSeekingTime);
 	int i, j;
 	for (i = 0, j = y; i < 512; i++, j++)
-		(*setMem)(j, floppyBuffer[x][i]);
+	{
+		if (wordRW > 0)
+		{
+			(*setMem)(j, floppyBuffer[x][i]);
+			wordRW--;
+		}
+	}
 	setState(pastState);
 	return 0;
 }
@@ -131,8 +143,12 @@ DWORD WINAPI FloppyThreadWrite(LPVOID lpParam)
 	USHORT data;
 	for (i = 0, j = y; i < 512; i++, j++)
 	{
-		(*getMem)(j, &data);
-		floppyBuffer[x][i] = data;
+		if (wordRW > 0)
+		{
+			(*getMem)(j, &data);
+			floppyBuffer[x][i] = data;
+			wordRW--;
+		}
 	}
 	fstream file(floppyPath, ios::out | ios::binary);
 	file.write((char *)(&floppyInfo), sizeof(FloppyInfo) / sizeof(char));

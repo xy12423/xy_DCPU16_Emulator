@@ -4,6 +4,8 @@
 #include "floppy.h"
 #include "export.h"
 
+MMRESULT timerHandle = 0;
+
 BOOL APIENTRY DllMain( HMODULE hModule,
                        DWORD  ul_reason_for_call,
                        LPVOID lpReserved
@@ -18,12 +20,14 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 		info[0].x = 0x7E91;
 		info[0].y = 0x1EB3;
 		info[0].hwi = &intrpt;
+		timerHandle = timeSetEvent(10, 1, &FloppyTimer, NULL, TIME_PERIODIC);
 		break;
 	case DLL_THREAD_ATTACH:
 		break;
 	case DLL_THREAD_DETACH:
 		break;
 	case DLL_PROCESS_DETACH:
+		timeKillEvent(timerHandle);
 		break;
 	}
 	return TRUE;
