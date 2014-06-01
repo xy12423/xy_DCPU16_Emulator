@@ -351,9 +351,16 @@ bool preprocess(string path)
 	string ppCmd, ppArg;
 	bool printLine;
 
+	defList defLst;
+	defList::iterator defItr, defEnd;
+	int layer = 1, skipping = 0;
+
 	while (!finLst.empty())
 	{
-		printLine = true;
+		if (skipping > 0)
+			printLine = false;
+		else
+			printLine = true;
 		fin->getline(line, 65536, '\n');
 		insline = line;
 		trim(insline);
@@ -376,12 +383,100 @@ bool preprocess(string path)
 				trim(ppCmd);
 				lcase(ppCmd);
 				trim(ppArg);
-				if (ppCmd == "include")
+				if (skipping == 0)
 				{
-					ifstream icFile(ppArg);
-					if (!icFile.is_open())
+					if (ppCmd == "include")
 					{
-						cout << "Preprocesser:file " << ppArg << " not found";
+						ifstream icFile(ppArg);
+						if (!icFile.is_open())
+						{
+							cout << "Preprocesser:file " << ppArg << " not found";
+							while (!finLst.empty())
+							{
+								finLst.end()->close();
+								finLst.pop_back();
+							}
+							fout.close();
+							return true;
+						}
+						icFile.close();
+						fout << "#file " << ppArg << endl;
+						finLst.push_back(ifstream(ppArg));
+						fin = finLst.end();
+						if (!finLst.empty())
+							fin--;
+						fileName.push_back(ppArg);
+						printLine = false;
+					}
+					else if (ppCmd == "define")
+					{
+						markPos = ppArg.find(' ');
+						if (markPos == string::npos)
+						{
+							ppCmd = ppArg;
+							ppArg = "";
+						}
+						else
+						{
+							ppCmd = ppArg.substr(0, markPos);
+							ppArg = ppArg.substr(markPos + 1);
+						}
+						defItem newDefItm(ppCmd, ppArg);
+						defEnd = defLst.end();
+						for (defItr = defLst.begin(); defItr != defEnd; defItr++)
+							if ((*defItr) > newDefItm)
+								break;
+						defLst.insert(defItr, newDefItm);
+					}
+					else if (ppCmd == "undef")
+					{
+						defEnd = defLst.end();
+						for (defItr = defLst.begin(); defItr != defEnd; defItr++)
+							if (defItr->name == ppArg)
+							{
+							defLst.erase(defItr);
+							break;
+							}
+					}
+					else if (ppCmd == "ifdef")
+					{
+						bool nFound = true;
+						defEnd = defLst.end();
+						for (defItr = defLst.begin(); defItr != defEnd; defItr++)
+						{
+							if (defItr->name == ppArg)
+							{
+								nFound = false;
+								break;
+							}
+						}
+						printLine = false;
+						if (nFound)
+							skipping = layer;
+					}
+					else if (ppCmd == "ifndef")
+					{
+						bool found = false;
+						defEnd = defLst.end();
+						for (defItr = defLst.begin(); defItr != defEnd; defItr++)
+						{
+							if (defItr->name == ppArg)
+							{
+								found = true;
+								break;
+							}
+						}
+						printLine = false;
+						if (found)
+							skipping = layer;
+					}
+					else if (ppCmd == "endif")
+					{
+						printLine = false;
+					}
+					else if (ppCmd == "file" || ppCmd == "/file")
+					{
+						cout << "Preprocesser:Illegal preprocess command #file";
 						while (!finLst.empty())
 						{
 							finLst.end()->close();
@@ -390,30 +485,20 @@ bool preprocess(string path)
 						fout.close();
 						return true;
 					}
-					icFile.close();
-					fout << "#file " << ppArg << endl;
-					finLst.push_back(ifstream(ppArg));
-					fin = finLst.end();
-					if (!finLst.empty())
-						fin--;
-					fileName.push_back(ppArg);
-					printLine = false;
 				}
-				else if (ppCmd == "file" || ppCmd == "/file")
-				{
-					cout << "Preprocesser:Illegal preprocess command #file";
-					while (!finLst.empty())
-					{
-						finLst.end()->close();
-						finLst.pop_back();
-					}
-					fout.close();
-					return true;
-				}
+				if (ppCmd == "ifdef")
+					layer++;
+				else if (ppCmd == "ifndef")
+					layer++;
+				else if (ppCmd == "endif")
+					layer--;
+				if (skipping != 0 && layer <= skipping)
+					skipping = 0;
 			}
 		}
 		if (printLine)
-			fout << line << endl;
+			fout << line;
+		fout << endl;
 		if (fin->eof())
 		{
 			fin->close();
@@ -483,7 +568,7 @@ int generate(string path, USHORT wAdd = 0, bool printLabel = false)
 	bool *joined = new bool[0x200000];
 
 	memset(m, -1, sizeof(int) * 0x200000);
-	memset(joined, false, sizeof(bool)* 0x200000);
+	memset(joined, false, sizeof(bool) * 0x200000);
 	while (!file.eof())
 	{
 		(*lineCount)++;
@@ -615,11 +700,13 @@ int generate(string path, USHORT wAdd = 0, bool printLabel = false)
 		}
 		if (insline.length() < 1)
 			continue;
-		defEnd = defLst.end();
+		defEnd = defLst.end();	//Ìæ»»ºê¶¨Òå
 		for (defItr = defLst.begin(); defItr != defEnd; defItr++)
 		{
 			markPos = insline.find(defItr->name);
-			while (markPos != string::npos)
+			while (
+				(markPos == 0					 ? true : insline[markPos - 1] == ' ') && 
+				(markPos == insline.length() - 1 ? true : insline[markPos + 1] == ' '))
 			{
 				insline = insline.substr(0, markPos) + defItr->val + insline.substr(markPos + defItr->name.length());
 				markPos = insline.find(defItr->name);
