@@ -354,6 +354,7 @@ bool preprocess(string path)
 	defList defLst;
 	defList::iterator defItr, defEnd;
 	int layer = 1, skipping = 0;
+	list<bool> elseRes;
 
 	while (!finLst.empty())
 	{
@@ -381,8 +382,17 @@ bool preprocess(string path)
 					ppArg = insline.substr(markPos + 1);
 				}
 				trim(ppCmd);
-				lcase(ppCmd);
 				trim(ppArg);
+				if (ppCmd == "ifdef")
+					layer++;
+				else if (ppCmd == "ifndef")
+					layer++;
+				else if (ppCmd == "endif")
+					layer--;
+				else if (ppCmd == "else")
+					layer--;
+				if (skipping != 0 && layer < skipping)
+					skipping = 0;
 				if (skipping == 0)
 				{
 					if (ppCmd == "include")
@@ -432,11 +442,13 @@ bool preprocess(string path)
 					{
 						defEnd = defLst.end();
 						for (defItr = defLst.begin(); defItr != defEnd; defItr++)
+						{
 							if (defItr->name == ppArg)
 							{
-							defLst.erase(defItr);
-							break;
+								defLst.erase(defItr);
+								break;
 							}
+						}
 					}
 					else if (ppCmd == "ifdef")
 					{
@@ -453,6 +465,7 @@ bool preprocess(string path)
 						printLine = false;
 						if (nFound)
 							skipping = layer;
+						elseRes.push_back(!nFound);
 					}
 					else if (ppCmd == "ifndef")
 					{
@@ -469,10 +482,18 @@ bool preprocess(string path)
 						printLine = false;
 						if (found)
 							skipping = layer;
+						elseRes.push_back(!found);
+					}
+					else if (ppCmd == "else")
+					{
+						if (elseRes.back())
+							skipping = layer;
+						printLine = false;
 					}
 					else if (ppCmd == "endif")
 					{
 						printLine = false;
+						elseRes.pop_back();
 					}
 					else if (ppCmd == "file" || ppCmd == "/file")
 					{
@@ -486,14 +507,8 @@ bool preprocess(string path)
 						return true;
 					}
 				}
-				if (ppCmd == "ifdef")
+				if (ppCmd == "else")
 					layer++;
-				else if (ppCmd == "ifndef")
-					layer++;
-				else if (ppCmd == "endif")
-					layer--;
-				if (skipping != 0 && layer <= skipping)
-					skipping = 0;
 			}
 		}
 		if (printLine)
@@ -596,6 +611,54 @@ int generate(string path, USHORT wAdd = 0, bool printLabel = false)
 		trim(insline);
 		if (insline.length() < 1)
 			continue;
+		markPos = insline.find(';');
+		if (markPos != string::npos) //注释
+		{
+			if (markPos == 0)
+				insline = "";
+			else
+			{
+				insline.erase(markPos - 1);
+				trim(insline);
+			}
+		}
+		markPos = insline.find(':'); //标签
+		if (markPos != string::npos)
+		{
+			if (markPos == 0) //:***
+			{
+				markPos = insline.find(' ');
+				if (markPos == string::npos)
+				{
+					lbl = insline.substr(1);
+					insline = "";
+				}
+				else
+				{
+					lbl = insline.substr(1, markPos - 1);
+					insline.erase(0, markPos + 1);
+				}
+			}
+			else //***:
+			{
+				lbl = insline.substr(0, markPos);
+				insline.erase(0, markPos + 1);
+			}
+			lblItr = lblLst.begin();
+			lblEnd = lblLst.end();
+			for (lblItr = lblLst.begin(); lblItr != lblEnd; lblItr++)
+			{
+				if (lblItr->str == lbl)
+				{
+					cout << fileName.back() << ':' << *lineCount << ":Duplicate label:" << lbl << endl;
+					result = -1;
+					goto _g_end;
+				}
+			}
+			lblLst.push_back(label(lbl, add, add));
+		}
+		if (insline.length() < 1)
+			continue;
 		if (insline.front() == '#') //预处理指令
 		{
 			insline.erase(0, 1);
@@ -666,17 +729,6 @@ int generate(string path, USHORT wAdd = 0, bool printLabel = false)
 			}
 			continue;
 		}
-		markPos = insline.find(';');
-		if (markPos != string::npos) //注释
-		{
-			if (markPos == 0)
-				insline = "";
-			else
-			{
-				insline.erase(markPos - 1);
-				trim(insline);
-			}
-		}
 		markPos = insline.find('$'); //类似于this的东西
 		if (markPos != string::npos)
 		{
@@ -684,39 +736,6 @@ int generate(string path, USHORT wAdd = 0, bool printLabel = false)
 			sysLblCount++;
 			lblLst.push_back(label(sysLabel, add, add));
 			insline = insline.substr(0, markPos) + sysLabel + insline.substr(markPos + 1);
-		}
-		markPos = insline.find(':'); //标签
-		if (markPos != string::npos)
-		{
-			if (markPos == 0) //:***
-			{
-				markPos = insline.find(' ');
-				if (markPos == string::npos)
-				{
-					lbl = insline.substr(1);
-					insline = "";
-				}
-				else
-				{
-					lbl = insline.substr(1, markPos - 1);
-					insline.erase(0, markPos + 1);
-				}
-			}
-			else //***:
-			{
-				lbl = insline.substr(0, markPos);
-				insline.erase(0, markPos + 1);
-			}
-			lblItr = lblLst.begin();
-			lblEnd = lblLst.end();
-			for (lblItr = lblLst.begin(); lblItr != lblEnd; lblItr++)
-				if (lblItr->str == lbl)
-				{
-					cout << fileName.back() << ':' << *lineCount << ":Duplicate label:" << lbl << endl;
-					result = -1;
-					goto _g_end;
-				}
-			lblLst.push_back(label(lbl, add, add));
 		}
 		if (insline.length() < 1)
 			continue;
