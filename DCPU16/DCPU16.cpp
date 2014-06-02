@@ -523,6 +523,25 @@ bool preprocess(string path)
 	return false;
 }
 
+bool spacer[] = { 
+	false, false, false, false, false, false, false, false,
+	false, false, false, false, false, false, false, false,
+	false, false, false, false, false, false, false, false,
+	false, false, false, false, false, false, false, false,
+	true,  false, false, false, false, false, false, false,
+	false, false, true,  true,  true,  true,  false, true,
+	false, false, false, false, false, false, false, false,
+	false, false, true,  true,  false, false, false, false,
+	false, false, false, false, false, false, false, false,
+	false, false, false, false, false, false, false, false,
+	false, false, false, false, false, false, false, false,
+	false, false, false, true,  false, true,  false, false,
+	false, false, false, false, false, false, false, false,
+	false, false, false, false, false, false, false, false,
+	false, false, false, false, false, false, false, false,
+	false, false, false, false, false, false, false, false, 
+};
+
 int generate(string path, USHORT wAdd = 0, bool printLabel = false)
 {
 	if (preprocess(path))
@@ -662,6 +681,7 @@ int generate(string path, USHORT wAdd = 0, bool printLabel = false)
 		if (markPos != string::npos)
 		{
 			sysLabel = "__asm_sys_label_" + toHEX(sysLblCount);
+			sysLblCount++;
 			lblLst.push_back(label(sysLabel, add, add));
 			insline = insline.substr(0, markPos) + sysLabel + insline.substr(markPos + 1);
 		}
@@ -704,12 +724,12 @@ int generate(string path, USHORT wAdd = 0, bool printLabel = false)
 		for (defItr = defLst.begin(); defItr != defEnd; defItr++)
 		{
 			markPos = insline.find(defItr->name);
-			while (
-				(markPos == 0					 ? true : insline[markPos - 1] == ' ') && 
-				(markPos == insline.length() - 1 ? true : insline[markPos + 1] == ' '))
+			while (markPos != string::npos)
 			{
-				insline = insline.substr(0, markPos) + defItr->val + insline.substr(markPos + defItr->name.length());
-				markPos = insline.find(defItr->name);
+				if ((markPos == 0 ? true : spacer[insline[markPos - 1]]) &&
+					(markPos == insline.length() - 1 ? true : spacer[insline[markPos + 1]]))
+					insline = insline.substr(0, markPos) + defItr->val + insline.substr(markPos + defItr->name.length());
+				markPos = insline.find(defItr->name, markPos + 1);
 			}
 		}
 		len = assembler(insline, m_ret, INS_RET_LEN);
