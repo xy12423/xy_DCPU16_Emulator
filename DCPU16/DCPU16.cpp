@@ -727,9 +727,9 @@ int generate(string path, USHORT wAdd = 0, bool printLabel = false)
 			while (markPos != string::npos)
 			{
 				if ((markPos == 0 ? true : spacer[insline[markPos - 1]]) &&
-					(markPos == insline.length() - 1 ? true : spacer[insline[markPos + 1]]))
+					(markPos == insline.length() - defItr->name.length() ? true : spacer[insline[markPos + defItr->name.length()]]))	//防止#define a之类后dat之类被替换成dt
 					insline = insline.substr(0, markPos) + defItr->val + insline.substr(markPos + defItr->name.length());
-				markPos = insline.find(defItr->name, markPos + 1);
+				markPos = insline.find(defItr->name, min(markPos + 1, (int)(insline.length() - 1)));
 			}
 		}
 		len = assembler(insline, m_ret, INS_RET_LEN);
@@ -781,15 +781,19 @@ int generate(string path, USHORT wAdd = 0, bool printLabel = false)
 		for (lblItr = lblBeg; lblItr != lblEnd; lblItr++)
 		{
 			markPos = insline.find(lblItr->str);
-			if (markPos != string::npos)
+			bool used = false;
+			while (markPos != string::npos)
 			{
-				lblUsedLst.push_back(lblItr);
-				while (markPos != string::npos)
+				if ((markPos == 0 ? true : spacer[insline[markPos - 1]]) &&
+					(markPos == insline.length() - lblItr->str.length() ? true : spacer[insline[markPos + lblItr->str.length()]]))	//与处理宏定义时的超长判断用途一致
 				{
+					used = true;
 					insline = insline.substr(0, markPos) + "0x" + toHEX(lblItr->pos) + insline.substr(markPos + lblItr->str.length());
-					markPos = insline.find(lblItr->str);
 				}
+				markPos = insline.find(lblItr->str, min(markPos + 1, (int)(insline.length() - 1)));
 			}
+			if (used)
+				lblUsedLst.push_back(lblItr);
 		}
 		len = assembler(insline, m_ret, INS_RET_LEN);
 		pendItm.len = len;
