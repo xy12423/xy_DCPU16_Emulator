@@ -613,10 +613,6 @@ int generate(string path, USHORT wAdd = 0, bool printLabel = false)
 		(*lineCount)++;
 		file.getline(line, 65536, '\n');
 		insline = line;
-		if (insline == "    SET PC, jmp1")
-		{
-			insline = "    SET PC, jmp1";
-		}
 		trim(insline);
 		if (insline.length() < 1)
 			continue;
