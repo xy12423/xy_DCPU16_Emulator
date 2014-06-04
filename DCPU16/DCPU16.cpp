@@ -10,7 +10,8 @@ string m_arg[INS_RET_LEN];
 void doCodeThreadS()
 {
 	doCodeThread();
-	cout << "Process stopped.Press any key to continue." << endl;
+	if (doCodeB)
+		cout << "Process stopped.Press any key to continue." << endl;
 }
 
 #ifdef _P_WIN
@@ -256,7 +257,11 @@ void trace(string arg = "")
 	string ins;
 	do
 	{
-		doCode();
+		if (doCode() < 1)
+		{
+			cout << "Wrong Instruction or Internal Error occurred" << endl;
+			break;
+		}
 		regist();
 		unassembler(mem[pc], mem[pc + 1], mem[pc + 2], ins);
 		cout << "Next:" << ins << endl;
@@ -608,6 +613,10 @@ int generate(string path, USHORT wAdd = 0, bool printLabel = false)
 		(*lineCount)++;
 		file.getline(line, 65536, '\n');
 		insline = line;
+		if (insline == "    SET PC, jmp1")
+		{
+			insline = "    SET PC, jmp1";
+		}
 		trim(insline);
 		if (insline.length() < 1)
 			continue;
@@ -623,26 +632,24 @@ int generate(string path, USHORT wAdd = 0, bool printLabel = false)
 			}
 		}
 		markPos = insline.find(':'); //标签
-		if (markPos != string::npos)
+		if (markPos == 0)
 		{
-			if (markPos == 0) //:***
+			markPos = insline.find(' ');
+			if (markPos == string::npos)
 			{
-				markPos = insline.find(' ');
-				if (markPos == string::npos)
-				{
-					lbl = insline.substr(1);
-					insline = "";
-				}
-				else
-				{
-					lbl = insline.substr(1, markPos - 1);
-					insline.erase(0, markPos + 1);
-				}
+				lbl = insline.substr(1);
+				insline = "";
 			}
-			else //***:
+			else
 			{
-				lbl = insline.substr(0, markPos);
+				lbl = insline.substr(1, markPos - 1);
 				insline.erase(0, markPos + 1);
+			}
+			if (lbl.find('$') != string::npos)
+			{
+				cout << fileName.back() << ':' << *lineCount << ":Illgeal label:" << lbl << endl;
+				result = -1;
+				goto _g_end;
 			}
 			lblItr = lblLst.begin();
 			lblEnd = lblLst.end();
@@ -732,7 +739,7 @@ int generate(string path, USHORT wAdd = 0, bool printLabel = false)
 		markPos = insline.find('$'); //类似于this的东西
 		if (markPos != string::npos)
 		{
-			sysLabel = "__asm_sys_label_" + toHEX(sysLblCount);
+			sysLabel = "$__asm_sys_label_" + toHEX(sysLblCount);
 			sysLblCount++;
 			lblLst.push_back(label(sysLabel, add, add));
 			insline = insline.substr(0, markPos) + sysLabel + insline.substr(markPos + 1);
