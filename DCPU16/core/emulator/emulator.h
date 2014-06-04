@@ -321,13 +321,7 @@ volatile int cycleAll = 0;
 void doCodeThread()
 {
 	int cyclePassed = 0;
-	cycleAll = 0;
-	for (int i = 0; i < 8; i++)
-		reg[i] = 0;
-	pc = 0;
-	sp = 0;
-	ex = 0;
-	ia = 0;
+	cycleAll = 0; 
 	int cycle = 0;
 	clock_t start;
 	while (doCodeB)
@@ -337,6 +331,8 @@ void doCodeThread()
 		start = clock();
 		cycle = doCode();
 		if (cycle < 1)
+			return;
+		if (breakPoint[pc])
 			return;
 		cyclePassed += cycle;
 	}

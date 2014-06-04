@@ -1,4 +1,5 @@
 Clock.dll
 Floppy.dll
+HDD.dll
 Monitor.dll
 3DDisplay.dll

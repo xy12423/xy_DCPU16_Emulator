@@ -146,8 +146,9 @@ int assembler(std::string code, USHORT ret[], int retLen)
 	}
 	trim(b);
 	trim(a);
-	preprcs(op, b, a, codeType);
+	trim(op);
 	lcase(op);
+	preprcs(op, b, a, codeType);
 	int retcode;
 	switch (codeType)
 	{
@@ -168,6 +169,7 @@ int assembler(std::string code, USHORT ret[], int retLen)
 				std::list<std::string> *datList;
 				std::list<std::string>::iterator pItr, pEnd;
 				USHORT nw = 0;
+				long long temp = 0;
 				switch (retop.b)
 				{
 					case 0x00:
@@ -176,8 +178,12 @@ int assembler(std::string code, USHORT ret[], int retLen)
 						pEnd = datList->end();
 						for (pItr = datList->begin(); pItr != pEnd; pItr++)
 						{
-							if (canBeNum(*pItr))
-								ret[codelen++] = toNum(*pItr);
+							if (calcStr(*pItr, temp) == 0)
+							{
+								if (temp > 0xFFFF || temp < -32768)
+									return _ERR_ASM_ILLEGAL;
+								ret[codelen++] = (USHORT)(temp);
+							}
 							else if (pItr->front() == '[' && pItr->back() == ']')
 							{
 								pItr->erase(0, 1);
@@ -204,7 +210,7 @@ int assembler(std::string code, USHORT ret[], int retLen)
 						codelen = 0;
 						retop.op = 0x01;
 						retop.b = 0x00;
-						retcode = retArgNum(a, retop.a, nw);
+						retcode = retArgNum(a, retop.a, nw, true);
 						if (retcode < 0)
 							return retcode;
 						else
@@ -225,7 +231,7 @@ int assembler(std::string code, USHORT ret[], int retLen)
 			{
 				USHORT nw = 0;
 				lcase(a);
-				retcode = retArgNum(a, retop.a, nw);
+				retcode = retArgNum(a, retop.a, nw, true);
 				if (retcode < 0)
 					return retcode;
 				else if (retcode == 2)
@@ -263,7 +269,7 @@ int assembler(std::string code, USHORT ret[], int retLen)
 						retop.b = 0x18;
 						for (pItr = argList->begin(); pItr != pEnd; pItr++)
 						{
-							retcode = retArgNum(*pItr, retop.a, nw);
+							retcode = retArgNum(*pItr, retop.a, nw, true);
 							if (retcode < 0)
 								return retcode;
 							else
@@ -278,7 +284,7 @@ int assembler(std::string code, USHORT ret[], int retLen)
 						lcase(b);
 						retop.op = 0x00;
 						retop.b = 0x01;
-						retcode = retArgNum(b, retop.a, nw);
+						retcode = retArgNum(b, retop.a, nw, true);
 						if (retcode < 0)
 							return retcode;
 						else
@@ -325,14 +331,14 @@ int assembler(std::string code, USHORT ret[], int retLen)
 			{
 				USHORT nw = 0;
 				lcase(b);
-				retcode = retArgNum(b, retop.b, nw);
+				retcode = retArgNum(b, retop.b, nw, false);
 				if (retcode < 0)
 					return retcode;
 				else if (retcode == 2)
 					ret[codelen++] = nw;
 				nw = 0;
 				lcase(a);
-				retcode = retArgNum(a, retop.a, nw);
+				retcode = retArgNum(a, retop.a, nw, true);
 				if (retcode < 0)
 					return retcode;
 				else if (retcode == 2)

@@ -7,11 +7,18 @@ using namespace std;
 USHORT m_ret[INS_RET_LEN];
 string m_arg[INS_RET_LEN];
 
+void doCodeThreadS()
+{
+	doCodeThread();
+	if (doCodeB)
+		cout << "Process stopped.Press any key to continue." << endl;
+}
+
 #ifdef _P_WIN
 DWORD threadID = 0;
 DWORD WINAPI doCodeThreadBegin(LPVOID lpParam)
 {
-	doCodeThread();
+	doCodeThreadS();
 	return 0;
 }
 #endif
@@ -25,11 +32,11 @@ void doCodeThreadStarter()
 #ifdef _P_LIN
 	pthread_attr_init(&attr);
 	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
-	pthread_create(&tid, &attr, &doCodeThread, NULL);
+	pthread_create(&tid, &attr, &doCodeThreadS, NULL);
 #endif
 #ifdef _P_NA
 #ifdef __CPP11_thread
-	thread em(doCodeThread);
+	thread em(doCodeThreadS);
 	em.detach();
 #endif
 #endif
@@ -250,7 +257,11 @@ void trace(string arg = "")
 	string ins;
 	do
 	{
-		doCode();
+		if (doCode() < 1)
+		{
+			cout << "Wrong Instruction or Internal Error occurred" << endl;
+			break;
+		}
 		regist();
 		unassembler(mem[pc], mem[pc + 1], mem[pc + 2], ins);
 		cout << "Next:" << ins << endl;
@@ -345,9 +356,17 @@ bool preprocess(string path)
 	string ppCmd, ppArg;
 	bool printLine;
 
+	defList defLst;
+	defList::iterator defItr, defEnd;
+	int layer = 1, skipping = 0;
+	list<bool> elseRes;
+
 	while (!finLst.empty())
 	{
-		printLine = true;
+		if (skipping > 0)
+			printLine = false;
+		else
+			printLine = true;
 		fin->getline(line, 65536, '\n');
 		insline = line;
 		trim(insline);
@@ -368,14 +387,122 @@ bool preprocess(string path)
 					ppArg = insline.substr(markPos + 1);
 				}
 				trim(ppCmd);
-				lcase(ppCmd);
 				trim(ppArg);
-				if (ppCmd == "include")
+				if (ppCmd == "ifdef")
+					layer++;
+				else if (ppCmd == "ifndef")
+					layer++;
+				else if (ppCmd == "endif")
+					layer--;
+				else if (ppCmd == "else")
+					layer--;
+				if (skipping != 0 && layer < skipping)
+					skipping = 0;
+				if (skipping == 0)
 				{
-					ifstream icFile(ppArg);
-					if (!icFile.is_open())
+					if (ppCmd == "include")
 					{
-						cout << "Preprocesser:file " << ppArg << " not found";
+						ifstream icFile(ppArg);
+						if (!icFile.is_open())
+						{
+							cout << "Preprocesser:file " << ppArg << " not found";
+							while (!finLst.empty())
+							{
+								finLst.end()->close();
+								finLst.pop_back();
+							}
+							fout.close();
+							return true;
+						}
+						icFile.close();
+						fout << "#file " << ppArg << endl;
+						finLst.push_back(ifstream(ppArg));
+						fin = finLst.end();
+						if (!finLst.empty())
+							fin--;
+						fileName.push_back(ppArg);
+						printLine = false;
+					}
+					else if (ppCmd == "define")
+					{
+						markPos = ppArg.find(' ');
+						if (markPos == string::npos)
+						{
+							ppCmd = ppArg;
+							ppArg = "";
+						}
+						else
+						{
+							ppCmd = ppArg.substr(0, markPos);
+							ppArg = ppArg.substr(markPos + 1);
+						}
+						defItem newDefItm(ppCmd, ppArg);
+						defEnd = defLst.end();
+						for (defItr = defLst.begin(); defItr != defEnd; defItr++)
+							if ((*defItr) > newDefItm)
+								break;
+						defLst.insert(defItr, newDefItm);
+					}
+					else if (ppCmd == "undef")
+					{
+						defEnd = defLst.end();
+						for (defItr = defLst.begin(); defItr != defEnd; defItr++)
+						{
+							if (defItr->name == ppArg)
+							{
+								defLst.erase(defItr);
+								break;
+							}
+						}
+					}
+					else if (ppCmd == "ifdef")
+					{
+						bool nFound = true;
+						defEnd = defLst.end();
+						for (defItr = defLst.begin(); defItr != defEnd; defItr++)
+						{
+							if (defItr->name == ppArg)
+							{
+								nFound = false;
+								break;
+							}
+						}
+						printLine = false;
+						if (nFound)
+							skipping = layer;
+						elseRes.push_back(!nFound);
+					}
+					else if (ppCmd == "ifndef")
+					{
+						bool found = false;
+						defEnd = defLst.end();
+						for (defItr = defLst.begin(); defItr != defEnd; defItr++)
+						{
+							if (defItr->name == ppArg)
+							{
+								found = true;
+								break;
+							}
+						}
+						printLine = false;
+						if (found)
+							skipping = layer;
+						elseRes.push_back(!found);
+					}
+					else if (ppCmd == "else")
+					{
+						if (elseRes.back())
+							skipping = layer;
+						printLine = false;
+					}
+					else if (ppCmd == "endif")
+					{
+						printLine = false;
+						elseRes.pop_back();
+					}
+					else if (ppCmd == "file" || ppCmd == "/file")
+					{
+						cout << "Preprocesser:Illegal preprocess command #file";
 						while (!finLst.empty())
 						{
 							finLst.end()->close();
@@ -384,30 +511,14 @@ bool preprocess(string path)
 						fout.close();
 						return true;
 					}
-					icFile.close();
-					fout << "#file " << ppArg << endl;
-					finLst.push_back(ifstream(ppArg));
-					fin = finLst.end();
-					if (!finLst.empty())
-						fin--;
-					fileName.push_back(ppArg);
-					printLine = false;
 				}
-				else if (ppCmd == "file" || ppCmd == "/file")
-				{
-					cout << "Preprocesser:Illegal preprocess command #file";
-					while (!finLst.empty())
-					{
-						finLst.end()->close();
-						finLst.pop_back();
-					}
-					fout.close();
-					return true;
-				}
+				if (ppCmd == "else")
+					layer++;
 			}
 		}
 		if (printLine)
-			fout << line << endl;
+			fout << line;
+		fout << endl;
 		if (fin->eof())
 		{
 			fin->close();
@@ -432,7 +543,26 @@ bool preprocess(string path)
 	return false;
 }
 
-int generate(string path, USHORT wAdd = 0)
+bool spacer[] = { 
+	false, false, false, false, false, false, false, false,
+	false, false, false, false, false, false, false, false,
+	false, false, false, false, false, false, false, false,
+	false, false, false, false, false, false, false, false,
+	true,  false, false, false, false, false, false, false,
+	false, false, true,  true,  true,  true,  false, true,
+	false, false, false, false, false, false, false, false,
+	false, false, true,  true,  false, false, false, false,
+	false, false, false, false, false, false, false, false,
+	false, false, false, false, false, false, false, false,
+	false, false, false, false, false, false, false, false,
+	false, false, false, true,  false, true,  false, false,
+	false, false, false, false, false, false, false, false,
+	false, false, false, false, false, false, false, false,
+	false, false, false, false, false, false, false, false,
+	false, false, false, false, false, false, false, false, 
+};
+
+int generate(string path, USHORT wAdd = 0, bool printLabel = false)
 {
 	if (preprocess(path))
 		return -1;
@@ -477,7 +607,7 @@ int generate(string path, USHORT wAdd = 0)
 	bool *joined = new bool[0x200000];
 
 	memset(m, -1, sizeof(int) * 0x200000);
-	memset(joined, false, sizeof(bool)* 0x200000);
+	memset(joined, false, sizeof(bool) * 0x200000);
 	while (!file.eof())
 	{
 		(*lineCount)++;
@@ -486,7 +616,53 @@ int generate(string path, USHORT wAdd = 0)
 		trim(insline);
 		if (insline.length() < 1)
 			continue;
-		if (insline.front() == '#')
+		markPos = insline.find(';');
+		if (markPos != string::npos) //注释
+		{
+			if (markPos == 0)
+				insline = "";
+			else
+			{
+				insline.erase(markPos - 1);
+				trim(insline);
+			}
+		}
+		markPos = insline.find(':'); //标签
+		if (markPos == 0)
+		{
+			markPos = insline.find(' ');
+			if (markPos == string::npos)
+			{
+				lbl = insline.substr(1);
+				insline = "";
+			}
+			else
+			{
+				lbl = insline.substr(1, markPos - 1);
+				insline.erase(0, markPos + 1);
+			}
+			if (lbl.find('$') != string::npos)
+			{
+				cout << fileName.back() << ':' << *lineCount << ":Illgeal label:" << lbl << endl;
+				result = -1;
+				goto _g_end;
+			}
+			lblItr = lblLst.begin();
+			lblEnd = lblLst.end();
+			for (lblItr = lblLst.begin(); lblItr != lblEnd; lblItr++)
+			{
+				if (lblItr->str == lbl)
+				{
+					cout << fileName.back() << ':' << *lineCount << ":Duplicate label:" << lbl << endl;
+					result = -1;
+					goto _g_end;
+				}
+			}
+			lblLst.push_back(label(lbl, add, add));
+		}
+		if (insline.length() < 1)
+			continue;
+		if (insline.front() == '#') //预处理指令
 		{
 			insline.erase(0, 1);
 			markPos = insline.find(' ');
@@ -556,59 +732,26 @@ int generate(string path, USHORT wAdd = 0)
 			}
 			continue;
 		}
-		markPos = insline.find(';');
+		markPos = insline.find('$'); //类似于this的东西
 		if (markPos != string::npos)
 		{
-			if (markPos == 0)
-				insline = "";
-			else
-			{
-				insline.erase(markPos - 1);
-				trim(insline);
-			}
-		}
-		markPos = insline.find('$');
-		if (markPos != string::npos)
-		{
-			sysLabel = "__asm_sys_label_" + toHEX(sysLblCount);
+			sysLabel = "$__asm_sys_label_" + toHEX(sysLblCount);
+			sysLblCount++;
 			lblLst.push_back(label(sysLabel, add, add));
 			insline = insline.substr(0, markPos) + sysLabel + insline.substr(markPos + 1);
 		}
-		markPos = insline.find(':');
-		if (markPos != string::npos)
-		{
-			if (markPos == 0)
-			{
-				markPos = insline.find(' ');
-				if (markPos == string::npos)
-				{
-					lbl = insline.substr(1);
-					insline = "";
-				}
-				else
-				{
-					lbl = insline.substr(1, markPos - 1);
-					insline.erase(0, markPos + 1);
-				}
-				lblLst.push_back(label(lbl, add, add));
-			}
-			else
-			{
-				lbl = insline.substr(0, markPos);
-				insline.erase(0, markPos + 1);
-				lblLst.push_back(label(lbl, add, add));
-			}
-		}
 		if (insline.length() < 1)
 			continue;
-		defEnd = defLst.end();
+		defEnd = defLst.end();	//替换宏定义
 		for (defItr = defLst.begin(); defItr != defEnd; defItr++)
 		{
 			markPos = insline.find(defItr->name);
 			while (markPos != string::npos)
 			{
-				insline = insline.substr(0, markPos) + defItr->val + insline.substr(markPos + defItr->name.length());
-				markPos = insline.find(defItr->name);
+				if ((markPos == 0 ? true : spacer[insline[markPos - 1]]) &&
+					(markPos == insline.length() - defItr->name.length() ? true : spacer[insline[markPos + defItr->name.length()]]))	//防止#define a之类后dat之类被替换成dt
+					insline = insline.substr(0, markPos) + defItr->val + insline.substr(markPos + defItr->name.length());
+				markPos = insline.find(defItr->name, min(markPos + 1, (int)(insline.length() - 1)));
 			}
 		}
 		len = assembler(insline, m_ret, INS_RET_LEN);
@@ -660,19 +803,24 @@ int generate(string path, USHORT wAdd = 0)
 		for (lblItr = lblBeg; lblItr != lblEnd; lblItr++)
 		{
 			markPos = insline.find(lblItr->str);
-			if (markPos != string::npos)
+			bool used = false;
+			while (markPos != string::npos)
 			{
-				lblUsedLst.push_back(lblItr);
-				while (markPos != string::npos)
+				if ((markPos == 0 ? true : spacer[insline[markPos - 1]]) &&
+					(markPos == insline.length() - lblItr->str.length() ? true : spacer[insline[markPos + lblItr->str.length()]]))	//与处理宏定义时的超长判断用途一致
 				{
+					used = true;
 					insline = insline.substr(0, markPos) + "0x" + toHEX(lblItr->pos) + insline.substr(markPos + lblItr->str.length());
-					markPos = insline.find(lblItr->str);
 				}
+				markPos = insline.find(lblItr->str, min(markPos + 1, (int)(insline.length() - 1)));
 			}
+			if (used)
+				lblUsedLst.push_back(lblItr);
 		}
 		len = assembler(insline, m_ret, INS_RET_LEN);
 		pendItm.len = len;
 		usedEnd = lblUsedLst.cend();
+		//汇编完之后再将指令加入 标签被引用列表 以防止指令长度不对
 		for (usedItr = lblUsedLst.cbegin(); usedItr != usedEnd; usedItr++)
 		{
 			lblItr = *usedItr;
@@ -728,6 +876,11 @@ int generate(string path, USHORT wAdd = 0)
 				}
 		}
 	}
+	if (printLabel)
+	{
+		for (lblItr = lblBeg; lblItr != lblEnd; lblItr++)
+			cout << lblItr->str << " 0x" << toHEX(lblItr->pos) << endl;
+	}
 	add = wAdd;
 	int retLen = 0;
 	int emptyCount = 0;
@@ -748,11 +901,23 @@ _g_end:file.close();
 	return result;
 }
 
+void breakpoint(string arg = "")
+{
+	int add = toNum(arg);
+	if (add < 0)
+	{
+		cout << "  ^ Error" << endl;
+		return;
+	}
+	breakPoint[add] = true;
+}
+
 fInit initF[65535];
 
 void init()
 {
 	memset(mem, 0, sizeof(mem));
+	memset(breakPoint, false, sizeof(breakPoint));
 	for (int i = 0; i < 8; i++)
 		reg[i] = 0;
 	pc = 0;
@@ -766,19 +931,20 @@ void init()
 
 void printUsage()
 {
-	cout << "assemble\tA [address]" << endl;		//
-	cout << "dump\t\tD [address]" << endl;			//
-	cout << "enter\t\tE address [list]" << endl;	//
-	cout << "generate\tG [address]" << endl;		//
-	cout << "initialize\tI" << endl;				//
-	cout << "load\t\tL address" << endl;			//
-	cout << "name\t\tN path" << endl;				//
-	cout << "proceed\t\tP" << endl;					//
-	cout << "quit\t\tQ" << endl;					//
-	cout << "register\tR [register]" << endl;		//
-	cout << "trace\t\tT [end]" << endl;				//
-	cout << "unassemble\tU [address]" << endl;		//
-	cout << "write\t\tW start end" << endl;			//
+	cout << "assemble\tA [address]" << endl;							//
+	cout << "breakpoint\tB address" << endl;							//
+	cout << "dump\t\tD [address]" << endl;								//
+	cout << "enter\t\tE address [list]" << endl;						//
+	cout << "generate\tG [-a address] [--lo true/false]" << endl;		//
+	cout << "initialize\tI" << endl;									//
+	cout << "load\t\tL address" << endl;								//
+	cout << "name\t\tN path" << endl;									//
+	cout << "proceed\t\tP" << endl;										//
+	cout << "quit\t\tQ" << endl;										//
+	cout << "register\tR [register]" << endl;							//
+	cout << "trace\t\tT [end]" << endl;									//
+	cout << "unassemble\tU [address]" << endl;							//
+	cout << "write\t\tW start end" << endl;								//
 	return;
 }
 
@@ -787,10 +953,6 @@ int mainLoop()
 	char _cmd[100];
 	string cmd;
 	string filePath;
-	fstream file;
-	char fileDatO = 0;
-	USHORT fileDat = 0;
-	int filePtr = 0, fileEndPtr = 0;
 	int i, argn;
 	cout << '-';
 	while (true)
@@ -864,8 +1026,11 @@ int mainLoop()
 				filePath = m_arg[0];
 				break;
 			case 'l':
-				if (file.is_open())
-					file.close();
+			{
+				fstream file;
+				char fileDatO = 0;
+				USHORT fileDat = 0;
+				int filePtr = 0;
 				file.open(filePath, ios::in | ios::binary);
 				filePtr = (USHORT)(toNum(m_arg[0]));
 				if (!file.is_open())
@@ -883,7 +1048,13 @@ int mainLoop()
 				}
 				file.close();
 				break;
+			}
 			case 'w':
+			{
+				fstream file;
+				char fileDatO = 0;
+				USHORT fileDat = 0;
+				int filePtr = 0, fileEndPtr = 0;
 				if (file.is_open())
 					file.close();
 				file.open(filePath, ios::out | ios::binary | ios::trunc);
@@ -896,14 +1067,51 @@ int mainLoop()
 				}
 				file.close();
 				break;
+			}
 			case 'g':
-				if (m_arg[0] == "")
-					generate(filePath, 0);
-				else
-					generate(filePath, toNum(m_arg[0]));
+			{
+				USHORT add = 0;
+				bool labelOut = false;
+				string *arg;
+				for (i = 0; i < argn; i++)
+				{
+					arg = &m_arg[i];
+					if ((*arg)[0] == '-')
+					{
+						arg->erase(0, 1);
+						if (arg->length() < 1)
+						{
+							cout << "  ^ Error" << endl;
+							break;
+						}
+						if ((*arg) == "a")
+						{
+							i++;
+							add = toNum(m_arg[i]);
+						}
+						else if ((*arg) == "-lo")
+						{
+							i++;
+							if (m_arg[i] == "true")
+								labelOut = true;
+							else if (m_arg[i] == "false")
+								labelOut = false;
+							else
+							{
+								cout << "  ^ Error" << endl;
+								break;
+							}
+						}
+					}
+				}
+				generate(filePath, add, labelOut);
 				break;
+			}
 			case 'i':
 				init();
+				break;
+			case 'b':
+				breakpoint(m_arg[0]);
 				break;
 			default:
 				cout << "  ^ Error" << endl;
@@ -1043,5 +1251,13 @@ int main(int argc, char* argv[], char* envp[])
 #endif
 		delete fname;
 	}
+	memset(mem, 0, sizeof(mem));
+	memset(breakPoint, false, sizeof(breakPoint));
+	for (int i = 0; i < 8; i++)
+		reg[i] = 0;
+	pc = 0;
+	sp = 0;
+	ex = 0;
+	ia = 0;
 	return mainLoop();
 }

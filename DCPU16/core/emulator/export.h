@@ -5,19 +5,19 @@
 
 #include "define.h"
 
-int __cdecl setMem(USHORT add, USHORT dat)
+int _cdecl setMem(USHORT add, USHORT dat)
 {
 	mem[add] = dat;
 	return 0;
 }
 
-int __cdecl getMem(USHORT add, USHORT *dat)
+int _cdecl getMem(USHORT add, USHORT *dat)
 {
 	*dat = mem[add];
 	return 0;
 }
 
-int __cdecl setReg(USHORT _reg, USHORT dat)
+int _cdecl setReg(USHORT _reg, USHORT dat)
 {
 	if (0x00 <= _reg && _reg <= 0x07)
 		reg[_reg] = dat;
@@ -44,7 +44,7 @@ int __cdecl setReg(USHORT _reg, USHORT dat)
 	return 0;
 }
 
-int __cdecl getReg(USHORT _reg, USHORT *dat)
+int _cdecl getReg(USHORT _reg, USHORT *dat)
 {
 	if (0x00 <= _reg && _reg <= 0x07)
 		*dat = reg[_reg];
@@ -72,7 +72,7 @@ int __cdecl getReg(USHORT _reg, USHORT *dat)
 }
 
 
-int __cdecl additr(USHORT _itr)
+int _cdecl additr(USHORT _itr)
 {
 	if (itrp == (unsigned char)(itre - 1))
 		return _ERR_EMU_ITR_OVERFLOW;

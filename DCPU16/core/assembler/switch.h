@@ -436,7 +436,7 @@ int retGRegStr(USHORT reg, std::string &ret)
 	return _ERR_ASM_NOERR;
 }
 
-int retArgNum(std::string arg, USHORT &ret1, USHORT &ret2)
+int retArgNum(std::string arg, USHORT &ret1, USHORT &ret2, bool isA)
 {
 	int inslen = 1;
 	long long temp = 0;
@@ -459,7 +459,9 @@ int retArgNum(std::string arg, USHORT &ret1, USHORT &ret2)
 			if (arg.length() < 3)
 				return _ERR_ASM_ILLEGAL;
 			std::string reg = arg.substr(0, plusPos);
+			trim(reg);
 			std::string shift = arg.substr(plusPos + 1);
+			trim(shift);
 			bool again = true;
 		_ran_begin_1:
 			if (reg == "sp")
@@ -520,16 +522,13 @@ int retArgNum(std::string arg, USHORT &ret1, USHORT &ret2)
 	else
 	{
 		if (calcStr(arg, temp) == 0)
-			arg = "0x" + toHEX((USHORT)(temp));
-		if (canBeNum(arg))
 		{
-			short int n = (USHORT)toNum(arg);
-			if (-1 <= n && n <= 30)
-				ret1 = (USHORT)(n + 0x21);
+			if (isA && ((-1 <= temp && temp <= 30) || temp == 0xFFFF))
+				ret1 = (USHORT)(temp + 0x21);
 			else
 			{
 				ret1 = 0x1F;
-				ret2 = (USHORT)(n);
+				ret2 = (USHORT)(temp);
 				inslen = 2;
 			}
 		}

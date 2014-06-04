@@ -9,7 +9,7 @@ typedef unsigned long ULONG;
 typedef unsigned long long ULONGLONG;
 typedef unsigned char BYTE;
 
-typedef int(__cdecl *fHWInt)();
+typedef int(_cdecl *fHWInt)();
 
 struct hardware
 {
@@ -17,9 +17,9 @@ struct hardware
 	fHWInt hwi;
 };
 
-typedef int(__cdecl *fSet)(USHORT, USHORT);
-typedef int(__cdecl *fGet)(USHORT, USHORT *);
-typedef int(__cdecl *fAdditr)(USHORT);
+typedef int(_cdecl *fSet)(USHORT, USHORT);
+typedef int(_cdecl *fGet)(USHORT, USHORT *);
+typedef int(_cdecl *fAdditr)(USHORT);
 
 fSet setMem, setReg;
 fGet getMem, getReg;
