@@ -72,6 +72,20 @@ void preprcs(std::string &op, std::string &b, std::string &a, int &codeType)
 		a = "[" + a.substr(0, bracketPos) + "+" + a.substr(bracketPos + 1);
 }
 
+struct escchr
+{
+	std::string str;
+	char val;
+};
+
+escchr escChr[] = {
+	"\\n", '\n',
+	"\\t", '\t',
+	"\\\"", '"',
+	"\\'", '\'',
+};
+const int escChrC = sizeof(escChr) / sizeof(escchr);
+
 int assembler(std::string code, USHORT ret[], int retLen)
 {
 	trim(code);
@@ -195,8 +209,18 @@ int assembler(std::string code, USHORT ret[], int retLen)
 							{
 								pItr->erase(0, 1);
 								pItr->pop_back();
+								int i, j;
+								for (i = 0; i < escChrC; i++)
+								{
+									j = pItr->find(escChr[i].str);
+									while (j != std::string::npos)
+									{
+										*pItr = pItr->substr(0, j) + escChr[i].val + pItr->substr(j + escChr[i].str.length());
+										j = pItr->find(escChr[i].str);
+									}
+								}
 								std::string::const_iterator p = pItr->cbegin();
-								for (int i = pItr->length(); i > 0 && codelen < retLen; i--, p++)
+								for (i = pItr->length(); i > 0 && codelen < retLen; i--, p++)
 									ret[codelen++] = *p;
 							}
 							else

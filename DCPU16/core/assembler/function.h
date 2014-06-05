@@ -339,6 +339,7 @@ std::list<std::string>* divideStr(std::string str, char sep)
 	std::list<std::string> *ret = new std::list<std::string>;
 	if (str.length() < 1)
 		return ret;
+	/*
 	int dotPos = str.find(sep);
 	while (dotPos != std::string::npos)
 	{
@@ -347,6 +348,37 @@ std::list<std::string>* divideStr(std::string str, char sep)
 		dotPos = str.find(sep);
 	}
 	ret->push_back(str);
+	*/
+	if (sep == '"')
+	{
+		int dotPos = str.find('"');
+		while (dotPos != std::string::npos)
+		{
+			ret->push_back(str.substr(0, dotPos));
+			str.erase(0, dotPos + 1);
+			dotPos = str.find('"');
+		}
+		ret->push_back(str);
+	}
+	else
+	{
+		std::string::const_iterator pBeg = str.cbegin(), p, pEnd = str.cend();
+		std::string strtmp;
+		bool isstr = false;
+		for (p = pBeg; p != pEnd; p++)
+		{
+			if (*p == '"' && (p == pBeg ? true : *(p - 1) != '\\'))
+				isstr = !isstr;
+			if ((!isstr) && *p == sep)
+			{
+				ret->push_back(strtmp);
+				strtmp.clear();
+			}
+			else
+				strtmp.push_back(*p);
+		}
+		ret->push_back(strtmp);
+	}
 	return ret;
 }
 
