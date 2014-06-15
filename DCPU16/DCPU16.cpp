@@ -339,6 +339,14 @@ bool preprocess(string path)
 {
 	list<ifstream> finLst;
 	list<ifstream>::iterator fin;
+	{
+		int mkPos = path.find('\\');
+		while (mkPos != std::string::npos)
+		{
+			path[mkPos] = '/';
+			mkPos = path.find('\\');
+		}
+	}
 	finLst.push_back(ifstream(path));
 	list<string> fileName;
 	fin = finLst.end();
@@ -353,6 +361,7 @@ bool preprocess(string path)
 	char *line = new char[65536];
 	int lineCount = 0;
 	string insline;
+	string dir = path.substr(0, path.find_last_of('/') + 1);
 	string ppCmd, ppArg;
 	bool printLine;
 
@@ -402,13 +411,29 @@ bool preprocess(string path)
 				{
 					if (ppCmd == "include")
 					{
+						int mkPos = 0;
+						mkPos = ppArg.find('\\');
+						while (mkPos != std::string::npos)
+						{
+							ppArg[mkPos] = '/';
+							mkPos = ppArg.find('\\');
+						}
+						if (ppArg.front() == '"' && ppArg.back() == '"')
+						{
+							ppArg.erase(0, 1);
+							ppArg.pop_back();
+						}
+						ppArg = dir + ppArg;
 						ifstream icFile(ppArg);
 						if (!icFile.is_open())
 						{
-							cout << "Preprocesser:file " << ppArg << " not found";
+							cout << "Preprocesser:Can't open file " << ppArg << endl;
+							fin->close();
+							finLst.pop_back();
 							while (!finLst.empty())
 							{
-								finLst.end()->close();
+								fin--;
+								fin->close();
 								finLst.pop_back();
 							}
 							fout.close();
@@ -418,9 +443,9 @@ bool preprocess(string path)
 						fout << "#file " << ppArg << endl;
 						finLst.push_back(ifstream(ppArg));
 						fin = finLst.end();
-						if (!finLst.empty())
-							fin--;
+						fin--;
 						fileName.push_back(ppArg);
+						dir = ppArg.substr(0, ppArg.find_last_of('/') + 1);
 						printLine = false;
 					}
 					else if (ppCmd == "define")
@@ -502,10 +527,13 @@ bool preprocess(string path)
 					}
 					else if (ppCmd == "file" || ppCmd == "/file")
 					{
-						cout << "Preprocesser:Illegal preprocess command #file";
+						cout << "Preprocesser:Illegal preprocess command #file" << endl;
+						fin->close();
+						finLst.pop_back();
 						while (!finLst.empty())
 						{
-							finLst.end()->close();
+							fin--;
+							fin->close();
 							finLst.pop_back();
 						}
 						fout.close();
@@ -528,7 +556,9 @@ bool preprocess(string path)
 				fin--;
 			if (!fileName.empty())
 			{
-				fout << "#/file " << fileName.back() << endl;
+				string parentFilename = fileName.back();
+				fout << "#/file " << parentFilename << endl;
+				dir = parentFilename.substr(0, parentFilename.find_last_of('/') + 1);
 				fileName.pop_back();
 			}
 		}
@@ -1263,5 +1293,14 @@ int main(int argc, char* argv[], char* envp[])
 	sp = 0;
 	ex = 0;
 	ia = 0;
-	return mainLoop();
+	int ret = 0;
+	try
+	{
+		ret = mainLoop();
+	}
+	catch (...)
+	{
+		logout << "An unknown error occured" << endl;
+	}
+	return ret;
 }

@@ -78,3 +78,5 @@
 #include <cstring>
 #include <list>
 #include <vector>
+#include <exception>
+#include <stdexcept>
