@@ -612,7 +612,7 @@ int generate(string path, USHORT wAdd = 0, bool printLabel = false)
 	{
 		(*lineCount)++;
 		file.getline(line, 65536, '\n');
-		insline = line;
+		insline = insline + line;
 		trim(insline);
 		if (insline.length() < 1)
 			continue;
@@ -730,6 +730,7 @@ int generate(string path, USHORT wAdd = 0, bool printLabel = false)
 				result = -1;
 				goto _g_end;
 			}
+			insline = "";
 			continue;
 		}
 		markPos = insline.find('$'); //类似于this的东西
@@ -754,6 +755,8 @@ int generate(string path, USHORT wAdd = 0, bool printLabel = false)
 				markPos = insline.find(defItr->name, min(markPos + 1, (int)(insline.length() - 1)));
 			}
 		}
+		if (insline.back() == ',')
+			continue;
 		len = assembler(insline, m_ret, INS_RET_LEN);
 		switch (len)
 		{
@@ -777,6 +780,7 @@ int generate(string path, USHORT wAdd = 0, bool printLabel = false)
 				for (i = 0; i < len; i++, add++)
 					m[add - addShift] = m_ret[i];
 		}
+		insline = "";
 	}
 	lblLst.sort();	//按标签长度从大到小排序以解决长标签与短标签内容部分重复时长标签被部分替换的问题
 	lblBeg = lblLst.begin();

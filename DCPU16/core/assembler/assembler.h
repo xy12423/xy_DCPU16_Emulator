@@ -192,6 +192,7 @@ int assembler(std::string code, USHORT ret[], int retLen)
 						pEnd = datList->end();
 						for (pItr = datList->begin(); pItr != pEnd; pItr++)
 						{
+							trim(*pItr);
 							if (calcStr(*pItr, temp) == 0)
 							{
 								if (temp > 0xFFFF || temp < -32768)
