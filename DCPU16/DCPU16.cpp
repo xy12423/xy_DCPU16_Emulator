@@ -594,7 +594,7 @@ bool spacer[] = {
 
 int generate(string path, USHORT wAdd = 0, bool printLabel = false)
 {
-	if (preprocess(path))
+	if (preprocess(path))	//处理部分预处理
 		return -1;
 	ifstream file("pp_temp");
 	list<string> fileName;
@@ -982,17 +982,24 @@ void printUsage()
 	return;
 }
 
-int mainLoop()
+int mainLoop(char *argv = NULL)
 {
 	char _cmd[100];
 	string cmd;
+	if (argv != NULL)
+		cmd = argv;
 	string filePath;
 	int i, argn;
 	cout << '-';
 	while (true)
 	{
-		cin.getline(_cmd, 100, '\n');
-		cmd = _cmd;
+		if (argv == NULL)
+		{
+			cin.getline(_cmd, 100, '\n');
+			cmd = _cmd;
+		}
+		else
+			argv = NULL;
 		trim(cmd);
 		if (cmd.length() < 1)
 		{
@@ -1175,51 +1182,108 @@ voidFunc funcAdd[FUNC_COUNT];
 
 int main(int argc, char* argv[], char* envp[])
 {
-	fin.open("plugins.txt");
-	if (!fin.is_open())
+	if (!logout.is_open())
 	{
-		ofstream crtfile("plugins.txt");
-		crtfile.close();
-		fin.open("plugins.txt");
+		cout << "Can't open log file" << endl;
+		return 0;
 	}
-	string filename("");
-	char *fname = NULL;
-	int len = 0, i;
-	while (!fin.eof())
+	int ret = 0;
+	try
 	{
-		fin >> filename;
-		len = filename.length();
-		if (len < 1)
-			continue;
-		fname = new char[len + 1];
-		for (i = 0; i < len; i++)
-			fname[i] = filename[i];
-		fname[len] = '\0';
-#ifdef _P_WIN
-		HMODULE plugin = LoadLibrary(filename.c_str());
-		if (plugin != NULL)
+		fin.open("plugins.txt");
+		if (!fin.is_open())
 		{
-			logout << "Loaded plugin " << filename << endl;
-			FARPROC hd = GetProcAddress(plugin, "init");
-			if (hd != NULL)
+			ofstream crtfile("plugins.txt");
+			crtfile.close();
+			fin.open("plugins.txt");
+		}
+		string filename("");
+		char *fname = NULL;
+		int len = 0, i;
+		while (!fin.eof())
+		{
+			fin >> filename;
+			len = filename.length();
+			if (len < 1)
+				continue;
+			fname = new char[len + 1];
+			for (i = 0; i < len; i++)
+				fname[i] = filename[i];
+			fname[len] = '\0';
+#ifdef _P_WIN
+			HMODULE plugin = LoadLibrary(filename.c_str());
+			if (plugin != NULL)
 			{
-				int initRes = ((fInit)(*hd))();
+				logout << "Loaded plugin " << filename << endl;
+				FARPROC hd = GetProcAddress(plugin, "init");
+				if (hd != NULL)
+				{
+					int initRes = ((fInit)(*hd))();
+					if (initRes != 0)
+					{
+						logout << "Failed to initialize plugin " << filename << " with error code 0x" << toHEX(initRes) << endl;
+						FreeLibrary(plugin);
+						delete fname;
+						continue;
+					}
+				}
+				bool loadSuccess = true;
+				for (i = 0; i < FUNC_COUNT; i++)
+				{
+					hd = GetProcAddress(plugin, funcName[i]);
+					if (hd == NULL)
+					{
+						logout << "Failed to find function entry point " << funcName[i] << " in plugin " << filename << endl;
+						FreeLibrary(plugin);
+						loadSuccess = false;
+						break;
+					}
+					funcAdd[i] = hd;
+				}
+				if (loadSuccess)
+				{
+					int hwCount = ((fGetHWCount)(*funcAdd[0]))();
+					hd = funcAdd[1];
+					for (i = 0; i < hwCount; i++)
+						hwt[hwn++] = ((fGetInfo)(*hd))(i);
+					((fSetHandle)(*funcAdd[2]))(&setMem, &getMem, &setReg, &getReg, &additr);
+				}
+			}
+			else
+				logout << "Failed to load plugin " << filename << endl;
+#endif
+#ifdef _P_LIN
+			void *plugin = NULL;
+			plugin = dlopen(fname, RTLD_LAZY);
+			if (plugin == NULL)
+				continue;
+			char* pszErr = dlerror();
+			if (pszErr != NULL)
+				continue;
+			logout << "Loaded plugin " << filename << endl;
+			fInit initF = dlsym(plugin, "init");
+			pszErr = dlerror();
+			if (pszErr != NULL)
+			{
+				int initRes = (*initF)();
 				if (initRes != 0)
 				{
 					logout << "Failed to initialize plugin " << filename << " with error code 0x" << toHEX(initRes) << endl;
-					FreeLibrary(plugin);
+					dlclose(plugin);
 					delete fname;
 					continue;
 				}
 			}
 			bool loadSuccess = true;
+			voidFunc hd;
 			for (i = 0; i < FUNC_COUNT; i++)
 			{
-				hd = GetProcAddress(plugin, funcName[i]);
-				if (hd == NULL)
+				hd = dlsym(plugin, funcName[i]);
+				pszErr = dlerror();
+				if (pszErr != NULL)
 				{
 					logout << "Failed to find function entry point " << funcName[i] << " in plugin " << filename << endl;
-					FreeLibrary(plugin);
+					dlclose(plugin);
 					loadSuccess = false;
 					break;
 				}
@@ -1233,70 +1297,33 @@ int main(int argc, char* argv[], char* envp[])
 					hwt[hwn++] = ((fGetInfo)(*hd))(i);
 				((fSetHandle)(*funcAdd[2]))(&setMem, &getMem, &setReg, &getReg, &additr);
 			}
-		}
-		else
-			logout << "Failed to load plugin " << filename << endl;
 #endif
-#ifdef _P_LIN
-		void *plugin = NULL;
-		plugin = dlopen(fname, RTLD_LAZY);
-		if (plugin == NULL)
-			continue;
-		char* pszErr = dlerror();
-		if (pszErr != NULL)
-			continue;
-		logout << "Loaded plugin " << filename << endl;
-		fInit initF = dlsym(plugin, "init");
-		pszErr = dlerror();
-		if (pszErr != NULL)
-		{
-			int initRes = (*initF)();
-			if (initRes != 0)
-			{
-				logout << "Failed to initialize plugin " << filename << " with error code 0x" << toHEX(initRes) << endl;
-				dlclose(plugin);
-				delete fname;
-				continue;
-			}
+			delete fname;
 		}
-		bool loadSuccess = true;
-		voidFunc hd;
-		for (i = 0; i < FUNC_COUNT; i++)
-		{
-			hd = dlsym(plugin, funcName[i]);
-			pszErr = dlerror();
-			if (pszErr != NULL)
-			{
-				logout << "Failed to find function entry point " << funcName[i] << " in plugin " << filename << endl;
-				dlclose(plugin);
-				loadSuccess = false;
-				break;
-			}
-			funcAdd[i] = hd;
-		}
-		if (loadSuccess)
-		{
-			int hwCount = ((fGetHWCount)(*funcAdd[0]))();
-			hd = funcAdd[1];
-			for (i = 0; i < hwCount; i++)
-				hwt[hwn++] = ((fGetInfo)(*hd))(i);
-			((fSetHandle)(*funcAdd[2]))(&setMem, &getMem, &setReg, &getReg, &additr);
-		}
-#endif
-		delete fname;
+		memset(mem, 0, sizeof(mem));
+		memset(breakPoint, false, sizeof(breakPoint));
+		for (int i = 0; i < 8; i++)
+			reg[i] = 0;
+		pc = 0;
+		sp = 0;
+		ex = 0;
+		ia = 0;
+		if (argc == 1)
+			ret = mainLoop();
+		else if (argc == 2)
+			ret = mainLoop(argv[1]);
 	}
-	memset(mem, 0, sizeof(mem));
-	memset(breakPoint, false, sizeof(breakPoint));
-	for (int i = 0; i < 8; i++)
-		reg[i] = 0;
-	pc = 0;
-	sp = 0;
-	ex = 0;
-	ia = 0;
-	int ret = 0;
-	try
+	catch (const char *ex)
 	{
-		ret = mainLoop();
+		logout << "Error:" << ex << endl;
+	}
+	catch (const string &ex)
+	{
+		logout << "Error:" << ex << endl;
+	}
+	catch (const runtime_error &ex)
+	{
+		logout << "Error:" << ex.what() << endl;
 	}
 	catch (...)
 	{
