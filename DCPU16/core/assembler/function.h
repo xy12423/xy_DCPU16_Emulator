@@ -4,6 +4,7 @@
 #define _H_ASM_FU
 
 #include "define.h"
+#include <sstream>
 #include <climits>
 #include <cctype>
 
@@ -194,13 +195,6 @@ std::string toHEX(unsigned int n)
 	return ret;
 }
 
-int opLv[128] = {
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 1, 0, 1, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0,
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-};
-
 long long power(int a, int b)
 {
 	long long ret = 1;
@@ -209,130 +203,142 @@ long long power(int a, int b)
 	return ret;
 }
 
-int calcStr(std::string str, long long &ret)
+int opLv[128] = {
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 3, 2, 0, 2, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+};
+
+struct postExpUnit
 {
-	std::string num;
-	std::list<long long> numStack;
+	std::string str;
+	BYTE type;
+	postExpUnit(){};
+	postExpUnit(std::string _str, BYTE _type)
+	{
+		str = _str;
+		type = _type;
+	};
+};
+typedef std::list < postExpUnit > postExp;
+
+postExp* in2Post(std::string str)
+{
+	std::string num, tmp;
+	postExp* ret = new postExp;
 	std::list<char> opStack;
 	std::string::const_iterator p, end = str.cend();
-	long long temp;
-	lcase(str);
 	for (p = str.cbegin(); p != end; p++)
 	{
 		if (opLv[*p] != 0)
 		{
-			if (!canBeNum(num))
-				return -1;
-			numStack.push_back(toNum(num));
-			num = "";
-			if (opStack.empty())
+			if (*p == '(')
 			{
 				opStack.push_back(*p);
 				continue;
 			}
-			while ((!opStack.empty()) && opLv[*p] <= opLv[opStack.back()])
+			else
 			{
-				switch (opStack.back())
+				ret->push_back(postExpUnit(num, 0));
+				num = "";
+				if (*p == ')')
+				{
+					if (opStack.empty())
+						return NULL;
+					while (opStack.back() != '(')
+					{
+						ret->push_back(postExpUnit(std::string(1, opStack.back()), 1));
+						opStack.pop_back();
+						if (opStack.empty())
+							return NULL;
+					}
+					opStack.pop_back();
+				}
+				else
+				{
+					while ((!opStack.empty()) && opLv[*p] <= opLv[opStack.back()])
+					{
+						ret->push_back(postExpUnit(std::string(1, opStack.back()), 1));
+						opStack.pop_back();
+					}
+					opStack.push_back(*p);
+				}
+			}
+		}
+		else
+		{
+			num.push_back(*p);
+		}
+	}
+	if (num != "")
+		ret->push_back(postExpUnit(num, 0));
+	while (!opStack.empty())
+	{
+		ret->push_back(postExpUnit(std::string(1, opStack.back()), 1));
+		opStack.pop_back();
+	}
+	return ret;
+}
+
+int calcPost(postExp* exp, long long &ret)
+{
+	std::list<long long> numStack;
+	postExp::const_iterator p, pEnd = exp->cend();
+	long long temp1 = 0, temp2 = 0;
+	for (p = exp->cbegin(); p != pEnd; p++)
+	{
+		switch (p->type)
+		{
+			case 0:
+				numStack.push_back(toNum(p->str));
+				break;
+			case 1:
+				if (numStack.empty())
+					return -1;
+				temp2 = numStack.back();
+				numStack.pop_back();
+				if (numStack.empty())
+					return -1;
+				temp1 = numStack.back();
+				numStack.pop_back();
+				switch (p->str.front())
 				{
 					case '+':
-						temp = numStack.back();
-						numStack.pop_back();
-						temp += numStack.back();
-						numStack.pop_back();
-						numStack.push_back(temp);
+						numStack.push_back(temp1 + temp2);
 						break;
 					case '-':
-						temp = numStack.back();
-						numStack.pop_back();
-						temp = numStack.back() - temp;
-						numStack.pop_back();
-						numStack.push_back(temp);
+						numStack.push_back(temp1 - temp2);
 						break;
 					case '*':
-						temp = numStack.back();
-						numStack.pop_back();
-						temp *= numStack.back();
-						numStack.pop_back();
-						numStack.push_back(temp);
+						numStack.push_back(temp1 * temp2);
 						break;
 					case '/':
-						temp = numStack.back();
-						numStack.pop_back();
-						temp = numStack.back() / temp;
-						numStack.pop_back();
-						numStack.push_back(temp);
+						numStack.push_back(temp1 / temp2);
 						break;
 					case '^':
-						temp = numStack.back();
-						numStack.pop_back();
-						temp = power((int)(numStack.back()), (int)(temp));
-						numStack.pop_back();
-						numStack.push_back(temp);
+						numStack.push_back(power((int)(temp1), (int)(temp2)));
 						break;
 					default:
 						return -1;
 				}
-				opStack.pop_back();
-			}
-			opStack.push_back(*p);
-		}
-		else
-		{
-			if (numLevel[*p] > 4)
-				return -1;
-			if (numLevel[*p] < 4)
-				num.push_back(*p);
+				break;
 		}
 	}
-	if (!canBeNum(num))
+	if (numStack.size() != 1)
 		return -1;
-	numStack.push_back(toNum(num));
-	while (!opStack.empty())
-	{
-		switch (opStack.back())
-		{
-			case '+':
-				temp = numStack.back();
-				numStack.pop_back();
-				temp += numStack.back();
-				numStack.pop_back();
-				numStack.push_back(temp);
-				break;
-			case '-':
-				temp = numStack.back();
-				numStack.pop_back();
-				temp = numStack.back() - temp;
-				numStack.pop_back();
-				numStack.push_back(temp);
-				break;
-			case '*':
-				temp = numStack.back();
-				numStack.pop_back();
-				temp *= numStack.back();
-				numStack.pop_back();
-				numStack.push_back(temp);
-				break;
-			case '/':
-				temp = numStack.back();
-				numStack.pop_back();
-				temp = numStack.back() / temp;
-				numStack.pop_back();
-				numStack.push_back(temp);
-				break;
-			case '^':
-				temp = numStack.back();
-				numStack.pop_back();
-				temp = power((int)(numStack.back()), (int)(temp));
-				numStack.pop_back();
-				numStack.push_back(temp);
-				break;
-			default:
-				return -1;
-		}
-		opStack.pop_back();
-	}
 	ret = numStack.back();
 	return 0;
+}
+
+int calcStr(std::string str, long long &ret)
+{
+	postExp *exp = in2Post(str);
+	if (exp == NULL)
+		return -1;
+	int res = calcPost(exp, ret);
+	delete exp;
+	return res;
 }
 
 std::list<std::string>* divideStr(std::string str, char sep)

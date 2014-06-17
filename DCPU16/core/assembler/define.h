@@ -4,7 +4,7 @@
 #define _H_ASM_DF
 
 #include <list>
-#include <sstream>
+#include <string>
 
 #define _ERR_ASM_NOERR 0
 #define _ERR_ASM_NOT_SUPPORTED -1
