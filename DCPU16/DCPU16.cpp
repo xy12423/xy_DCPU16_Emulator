@@ -1180,7 +1180,7 @@ typedef void (*voidFunc)();
 voidFunc funcAdd[FUNC_COUNT];
 #endif
 
-int main(int argc, char* argv[], char* envp[])
+int main(int argc, char* argv[])
 {
 	if (!logout.is_open())
 	{

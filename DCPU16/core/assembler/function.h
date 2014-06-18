@@ -205,7 +205,7 @@ long long power(int a, int b)
 
 int opLv[128] = {
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 3, 2, 0, 2, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 3, 2, 1, 2, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 };
@@ -228,6 +228,7 @@ postExp* in2Post(std::string str)
 	std::string num, tmp;
 	postExp* ret = new postExp;
 	std::list<char> opStack;
+	std::list<std::string> bracketStack;
 	std::string::const_iterator p, end = str.cend();
 	for (p = str.cbegin(); p != end; p++)
 	{
@@ -235,6 +236,8 @@ postExp* in2Post(std::string str)
 		{
 			if (*p == '(')
 			{
+				bracketStack.push_back(num);
+				num = "";
 				opStack.push_back(*p);
 				continue;
 			}
@@ -242,18 +245,29 @@ postExp* in2Post(std::string str)
 			{
 				ret->push_back(postExpUnit(num, 0));
 				num = "";
-				if (*p == ')')
+				if (*p == ',')
+					continue;
+				else if (*p == ')')
 				{
 					if (opStack.empty())
+					{
+						delete ret;
 						return NULL;
+					}
 					while (opStack.back() != '(')
 					{
 						ret->push_back(postExpUnit(std::string(1, opStack.back()), 1));
 						opStack.pop_back();
 						if (opStack.empty())
+						{
+							delete ret;
 							return NULL;
+						}
 					}
 					opStack.pop_back();
+					if (bracketStack.back() != "")
+						ret->push_back(postExpUnit(bracketStack.back(), 1));
+					bracketStack.pop_back();
 				}
 				else
 				{
