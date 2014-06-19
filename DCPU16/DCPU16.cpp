@@ -353,7 +353,7 @@ bool preprocess(string path)
 	fin--;
 	if (!fin->is_open())
 	{
-		cout << "  ^ Error" << endl;
+		cout << "  ^ Error:Can't Open File" << endl;
 		return true;
 	}
 	ofstream fout("pp_temp");
@@ -1114,6 +1114,7 @@ int mainLoop(char *argv = NULL)
 				USHORT add = 0;
 				bool labelOut = false;
 				string *arg;
+				string path = filePath;
 				for (i = 0; i < argn; i++)
 				{
 					arg = &m_arg[i];
@@ -1144,8 +1145,12 @@ int mainLoop(char *argv = NULL)
 							}
 						}
 					}
+					else
+					{
+						path = m_arg[i];
+					}
 				}
-				generate(filePath, add, labelOut);
+				generate(path, add, labelOut);
 				break;
 			}
 			case 'i':

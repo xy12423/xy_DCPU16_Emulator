@@ -305,7 +305,10 @@ int calcPost(postExp* exp, long long &ret)
 		switch (p->type)
 		{
 			case 0:
-				numStack.push_back(toNum(p->str));
+				if (canBeNum(p->str))
+					numStack.push_back(toNum(p->str));
+				else
+					return -1;
 				break;
 			case 1:
 				if (numStack.empty())
