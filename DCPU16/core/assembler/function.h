@@ -8,6 +8,24 @@
 #include <climits>
 #include <cctype>
 
+#ifndef _H_EMU_FU
+
+opcode US2OP(USHORT code)
+{
+	opcode ret;
+	ret.op = code & 0x1F;
+	ret.b = (code >> 5) & 0x1F;
+	ret.a = code >> 10;
+	return ret;
+}
+
+USHORT OP2US(opcode code)
+{
+	return ((code.a << 10) | (code.b << 5)) | code.op;
+}
+
+#endif
+
 void ltrim(std::string &str)
 {
 	int len = str.length();
