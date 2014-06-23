@@ -91,7 +91,7 @@ int assembler(std::string code, USHORT ret[], int retLen)
 	trim(code);
 	if (code.length() < 1)
 		return _ERR_ASM_ILLEGAL;
-	{
+	{	//分割形似...;...;之类的一行多指令
 		std::list<std::string> *cmdList = divideStr(code, ';');
 		if (cmdList->size() > 1)
 		{
@@ -129,7 +129,7 @@ int assembler(std::string code, USHORT ret[], int retLen)
 	bool setRetOP = true;
 	std::string op, b, a;
 	int codeType = -1;
-	{
+	{	//将指令分解为指令、操作数两部分
 		int spacePos = code.find(' ');
 		if (spacePos == std::string::npos)
 		{
@@ -162,22 +162,22 @@ int assembler(std::string code, USHORT ret[], int retLen)
 	trim(a);
 	trim(op);
 	lcase(op);
-	preprcs(op, b, a, codeType);
+	preprcs(op, b, a, codeType);	//识别 并处理部分 伪指令及一些奇怪的功能
 	int retcode;
-	switch (codeType)
+	switch (codeType)	//按操作数多少分类
 	{
-		case 0:
+		case 0:	//没有操作数
 			retop.op = 0;
 			retcode = retOpNum1(op, retop.a);
 			if (retcode != _ERR_ASM_NOERR)
 				return retcode;
 			break;
-		case 1:
+		case 1:	//1个操作数
 			retop.op = 0;
 			retcode = retOpNum2(op, retop.b);
 			if (retcode != _ERR_ASM_NOERR)
 				return retcode;
-			if (retop.b > 0x1F)
+			if (retop.b > 0x1F)	//如果是伪指令
 			{
 				retop.b -= 0x20;
 				std::list<std::string> *datList;
@@ -186,7 +186,7 @@ int assembler(std::string code, USHORT ret[], int retLen)
 				long long temp = 0;
 				switch (retop.b)
 				{
-					case 0x00:
+					case 0x00:	//伪指令dat
 						datList = divideStr(a, ',');
 						codelen = 0;
 						pEnd = datList->end();
@@ -230,7 +230,7 @@ int assembler(std::string code, USHORT ret[], int retLen)
 						setRetOP = false;
 						delete datList;
 						break;
-					case 0x02:
+					case 0x02:	//伪指令ret
 						lcase(a);
 						codelen = 0;
 						retop.op = 0x01;
@@ -252,7 +252,7 @@ int assembler(std::string code, USHORT ret[], int retLen)
 						break;
 				}
 			}
-			else
+			else //普通指令
 			{
 				USHORT nw = 0;
 				lcase(a);
@@ -263,11 +263,11 @@ int assembler(std::string code, USHORT ret[], int retLen)
 					ret[codelen++] = nw;
 			}
 			break;
-		case 2:
+		case 2:	//2个操作数
 			retcode = retOpNum3(op, retop.op);
 			if (retcode != _ERR_ASM_NOERR)
 				return retcode;
-			if (retop.op > 0x1F)
+			if (retop.op > 0x1F)	//如果是伪指令
 			{
 				retop.op -= 0x20;
 				USHORT nw = 0;
@@ -276,7 +276,7 @@ int assembler(std::string code, USHORT ret[], int retLen)
 				int argc = 0;
 				switch (retop.op)
 				{
-					case 0x01:
+					case 0x01:	//伪指令call
 						codelen = 0;
 						ret[codelen++] = 0x0301;
 						ret[codelen++] = 0x0701;
@@ -352,7 +352,7 @@ int assembler(std::string code, USHORT ret[], int retLen)
 						break;
 				}
 			}
-			else
+			else //普通指令
 			{
 				USHORT nw = 0;
 				lcase(b);

@@ -82,6 +82,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="core\assembler\asmFile.h" />
     <ClInclude Include="core\assembler\assembler.h" />
     <ClInclude Include="core\assembler\define.h" />
     <ClInclude Include="core\assembler\function.h" />

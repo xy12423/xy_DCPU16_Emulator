@@ -195,6 +195,15 @@ std::string toHEX(unsigned int n)
 	return ret;
 }
 
+std::string toStr(unsigned int n)
+{
+	std::stringstream ss;
+	std::string ret;
+	ss << std::dec << n;
+	ss >> ret;
+	return ret;
+}
+
 long long power(int a, int b)
 {
 	long long ret = 1;

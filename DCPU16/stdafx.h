@@ -50,16 +50,16 @@
 #endif
 #endif
 
+#ifndef __CPP11_thread
 #ifdef __GNUC__
 #if __GNUC__ > 4 && __GNUC_MINOR__ > 8
-#ifndef __CPP11_thread
 #define __CPP11_thread
 #endif
 #endif
 #endif
 
-#if __cplusplus >= 201103L
 #ifndef __CPP11_thread
+#if __cplusplus >= 201103L
 #define __CPP11_thread
 #endif
 #endif

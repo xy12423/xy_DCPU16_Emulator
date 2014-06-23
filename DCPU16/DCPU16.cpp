@@ -276,7 +276,7 @@ void proceed()
 	getchar();
 	doCodeB = false;
 }
-
+/*
 struct pendItem
 {
 	std::string str;
@@ -294,7 +294,7 @@ struct pendItem
 		lineN = _lineN;
 	}
 };
-typedef list<pendItem> pendList;
+typedef std::list<pendItem> pendList;
 
 struct label
 {
@@ -313,7 +313,7 @@ struct label
 		return str.length() > n.str.length();
 	}
 };
-typedef list<label> labelList;
+typedef std::list<label> labelList;
 
 struct defItem
 {
@@ -333,7 +333,7 @@ struct defItem
 		return name.length() < n.name.length();
 	}
 };
-typedef list<defItem> defList;
+typedef std::list<defItem> defList;
 
 bool preprocess(string path)
 {
@@ -934,7 +934,7 @@ _g_end:file.close();
 	delete[] m;
 	return result;
 }
-
+*/
 void breakpoint(string arg = "")
 {
 	int add = toNum(arg);
@@ -1150,7 +1150,14 @@ int mainLoop(char *argv = NULL)
 						path = m_arg[i];
 					}
 				}
-				generate(path, add, labelOut);
+				try
+				{
+					generate(path, mem, 65536, add, labelOut);
+				}
+				catch (std::string err)
+				{
+					cout << err << endl;
+				}
 				break;
 			}
 			case 'i':
