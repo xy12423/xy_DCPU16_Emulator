@@ -450,9 +450,12 @@ int mainLoop(char *argv = NULL)
 				char fileDatO = 0;
 				USHORT fileDat = 0;
 				int filePtr = 0, fileEndPtr = 0;
-				if (file.is_open())
-					file.close();
 				file.open(filePath, ios::out | ios::binary | ios::trunc);
+				if (!file.is_open())
+				{
+					cout << "  ^ Error:Can't Open File" << endl;
+					break;
+				}
 				filePtr = (USHORT)(toNum(m_arg[0]));
 				fileEndPtr = (USHORT)(toNum(m_arg[1]));
 				for (; filePtr <= fileEndPtr; filePtr++)
@@ -472,7 +475,7 @@ int mainLoop(char *argv = NULL)
 				for (i = 0; i < argn; i++)
 				{
 					arg = &m_arg[i];
-					if ((*arg)[0] == '-')
+					if (arg->front() == '-')
 					{
 						arg->erase(0, 1);
 						if (arg->length() < 1)
