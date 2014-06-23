@@ -321,7 +321,7 @@ bool spacer[] = {
 	false, false, false, false, false, false, false, false,
 };
 
-int asmFile(std::string path, USHORT retMem[], int retSize, USHORT wAdd = 0, bool printLabel = false)
+int asmFile(std::string path, USHORT retMem[], int retSize, USHORT wAdd = 0, bool printLabel = false, labelList* retLblLst = NULL)
 {
 	if (preprocess(path))	//处理部分预处理
 		return -1;
@@ -629,8 +629,9 @@ int asmFile(std::string path, USHORT retMem[], int retSize, USHORT wAdd = 0, boo
 		}
 		if (printLabel)
 		{
+			retLblLst->clear();
 			for (lblItr = lblBeg; lblItr != lblEnd; lblItr++)
-				std::cout << lblItr->str << " 0x" << toHEX(lblItr->pos) << std::endl;
+				retLblLst->push_back(label(lblItr->str, lblItr->pos, 0));
 		}
 		add = wAdd;
 		int retLen = 0;
