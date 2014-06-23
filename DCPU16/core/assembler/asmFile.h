@@ -627,7 +627,7 @@ int asmFile(std::string path, USHORT retMem[], int retSize, USHORT wAdd = 0, boo
 					}
 			}
 		}
-		if (printLabel)
+		if (printLabel && retLblLst != NULL)
 		{
 			retLblLst->clear();
 			for (lblItr = lblBeg; lblItr != lblEnd; lblItr++)
