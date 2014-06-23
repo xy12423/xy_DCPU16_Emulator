@@ -321,7 +321,7 @@ bool spacer[] = {
 	false, false, false, false, false, false, false, false,
 };
 
-int generate(std::string path, USHORT retMem[], int retSize, USHORT wAdd = 0, bool printLabel = false)
+int asmFile(std::string path, USHORT retMem[], int retSize, USHORT wAdd = 0, bool printLabel = false)
 {
 	if (preprocess(path))	//处理部分预处理
 		return -1;
