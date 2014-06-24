@@ -52,7 +52,7 @@ END
 
 VS_VERSION_INFO VERSIONINFO
  FILEVERSION 1,0,6,5
- PRODUCTVERSION 1,1,2,0
+ PRODUCTVERSION 1,1,3,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -74,7 +74,7 @@ BEGIN
             VALUE "LegalCopyright", "This program complies with LGPL"
             VALUE "OriginalFilename", "LEM1802K.dll"
             VALUE "ProductName", "DCPU-16 Emulator"
-            VALUE "ProductVersion", "1.1.2.0"
+            VALUE "ProductVersion", "1.1.3.0"
         END
     END
     BLOCK "VarFileInfo"
