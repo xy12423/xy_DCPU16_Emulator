@@ -57,6 +57,9 @@
     <ClInclude Include="core\main.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="core\assembler\asmFile.h">
+      <Filter>Assembler</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">

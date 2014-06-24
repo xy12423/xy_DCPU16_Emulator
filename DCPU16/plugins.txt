@@ -1,5 +1,4 @@
 Clock.dll
-Floppy.dll
-HDD.dll
-Monitor.dll
-3DDisplay.dll
+M35FD.dll
+LEM1802K.dll
+SPED-3.dll
