@@ -334,9 +334,7 @@ int asmFile(std::string path, USHORT retMem[], int retSize, USHORT wAdd = 0, boo
 	lineCount = lineCountLst.end();
 	lineCount--;
 	if (!file.is_open())
-	{
 		throw(std::string("Can't Open File ") + path);
-	}
 
 	char *line = new char[65536];
 	int *m = new int[0x200000];
@@ -525,6 +523,8 @@ int asmFile(std::string path, USHORT retMem[], int retSize, USHORT wAdd = 0, boo
 					add += 0x20;
 					pendCount++;
 					break;
+				case _ERR_ASM_TOO_LONG:
+					throw(std::string("Out of memory"));
 				default:
 					for (i = 0; i < len; i++, add++)
 						m[add - addShift] = arg_ret[i];
@@ -535,9 +535,7 @@ int asmFile(std::string path, USHORT retMem[], int retSize, USHORT wAdd = 0, boo
 		lblBeg = lblLst.begin();
 		lblEnd = lblLst.end();
 		if (add > retSize)
-		{
 			throw(std::string("Out of memory"));
-		}
 		int insLenAll = add;
 		//处理未被识别的标签
 		while (!pendLst.empty())
@@ -547,9 +545,7 @@ int asmFile(std::string path, USHORT retMem[], int retSize, USHORT wAdd = 0, boo
 			insline = pendItm.str;
 			add = pendItm.pos;
 			if (add < addShift)
-			{
 				throw(std::string("Assembler Error"));
-			}
 			joined[add - addShift] = false;
 			pendLen = pendItm.len;
 			for (i = 0; i < pendLen; i++)
@@ -599,6 +595,8 @@ int asmFile(std::string path, USHORT retMem[], int retSize, USHORT wAdd = 0, boo
 				case _ERR_ASM_ILLEGAL_OP:
 				case _ERR_ASM_ILLEGAL_ARG:
 					throw(std::string(pendItm.file + ':' + toStr(pendItm.lineN) + ":Illegal instruction " + pendItm.str));
+				case _ERR_ASM_TOO_LONG:
+					throw(std::string("Out of memory"));
 				default:
 					for (i = 0; i < len; i++, add++)
 						m[add - addShift] = arg_ret[i];

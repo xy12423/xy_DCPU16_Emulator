@@ -88,38 +88,11 @@ const int escChrC = sizeof(escChr) / sizeof(escchr);
 
 int assembler(std::string code, USHORT ret[], int retLen)
 {
+	if (retLen < 1)
+		return _ERR_ASM_TOO_LONG;
 	trim(code);
 	if (code.length() < 1)
 		return _ERR_ASM_ILLEGAL;
-	{	//分割形似...;...;之类的一行多指令
-		std::list<std::string> *cmdList = divideStr(code, ';');
-		if (cmdList->size() > 1)
-		{
-			std::list<std::string>::const_iterator p, pEnd = cmdList->cend();
-			USHORT *tRet = new USHORT[65536];
-			int codeLen = 0, retCode = 0, i;
-			for (p = cmdList->cbegin(); p != pEnd; p++)
-			{
-				if (p->length() < 1)
-					continue;
-				retCode = assembler(*p, tRet, 65536);
-				if (retCode < 1)
-					return retCode;
-				for (i = 0; i < retCode && codeLen < retLen; i++)
-					ret[codeLen++] = tRet[i];
-				if (codeLen > retLen)
-				{
-					delete tRet;
-					delete cmdList;
-					return _ERR_ASM_TOO_LONG;
-				}
-			}
-			delete tRet;
-			delete cmdList;
-			return codeLen;
-		}
-		delete cmdList;
-	}
 	opcode retop;
 	retop.op = 0;
 	retop.b = 0;
@@ -192,6 +165,8 @@ int assembler(std::string code, USHORT ret[], int retLen)
 						pEnd = datList->end();
 						for (pItr = datList->begin(); pItr != pEnd; pItr++)
 						{
+							if (codelen >= retLen)
+								return _ERR_ASM_TOO_LONG;
 							trim(*pItr);
 							if (calcStr(*pItr, temp) == 0)
 							{
@@ -231,6 +206,8 @@ int assembler(std::string code, USHORT ret[], int retLen)
 						delete datList;
 						break;
 					case 0x02:	//伪指令ret
+						if (codelen >= retLen)
+							return _ERR_ASM_TOO_LONG;
 						lcase(a);
 						codelen = 0;
 						retop.op = 0x01;
@@ -242,8 +219,14 @@ int assembler(std::string code, USHORT ret[], int retLen)
 						{
 							ret[codelen++] = OP2US(retop);
 							if (retcode == 2)
+							{
+								if (codelen >= retLen)
+									return _ERR_ASM_TOO_LONG;
 								ret[codelen++] = nw;
+							}
 						}
+						if (codelen + 4 > retLen)
+							return _ERR_ASM_TOO_LONG;
 						ret[codelen++] = 0x6701;
 						ret[codelen++] = 0x0341;
 						ret[codelen++] = 0x0001;
@@ -260,7 +243,11 @@ int assembler(std::string code, USHORT ret[], int retLen)
 				if (retcode < 0)
 					return retcode;
 				else if (retcode == 2)
+				{
+					if (codelen >= retLen)
+						return _ERR_ASM_TOO_LONG;
 					ret[codelen++] = nw;
+				}
 			}
 			break;
 		case 2:	//2个操作数
@@ -278,6 +265,8 @@ int assembler(std::string code, USHORT ret[], int retLen)
 				{
 					case 0x01:	//伪指令call
 						codelen = 0;
+						if (codelen + 8 > retLen)
+							return _ERR_ASM_TOO_LONG;
 						ret[codelen++] = 0x0301;
 						ret[codelen++] = 0x0701;
 						ret[codelen++] = 0x0B01;
@@ -299,6 +288,8 @@ int assembler(std::string code, USHORT ret[], int retLen)
 								return retcode;
 							else
 							{
+								if (codelen + retcode > retLen)
+									return _ERR_ASM_TOO_LONG;
 								ret[codelen++] = OP2US(retop);
 								if (retcode == 2)
 									ret[codelen++] = nw;
@@ -314,10 +305,14 @@ int assembler(std::string code, USHORT ret[], int retLen)
 							return retcode;
 						else
 						{
+							if (codelen + retcode > retLen)
+								return _ERR_ASM_TOO_LONG;
 							ret[codelen++] = OP2US(retop);
 							if (retcode == 2)
 								ret[codelen++] = nw;
 						}
+						if (codelen + 2 > retLen)
+							return _ERR_ASM_TOO_LONG;
 						ret[codelen++] = 0x6001;
 						if (argc > 0)
 						{
@@ -332,9 +327,13 @@ int assembler(std::string code, USHORT ret[], int retLen)
 							{
 								retop.a = 0x1F;
 								ret[codelen++] = OP2US(retop);
+								if (codelen >= retLen)
+									return _ERR_ASM_TOO_LONG;
 								ret[codelen++] = (USHORT)(argc);
 							}
 						}
+						if (codelen + 13 > retLen)
+							return _ERR_ASM_TOO_LONG;
 						ret[codelen++] = 0x60E1;
 						ret[codelen++] = 0x60C1;
 						ret[codelen++] = 0x60A1;
@@ -357,6 +356,8 @@ int assembler(std::string code, USHORT ret[], int retLen)
 				USHORT nw = 0;
 				lcase(b);
 				retcode = retArgNum(b, retop.b, nw, false);
+				if (codelen + retcode > retLen)
+					return _ERR_ASM_TOO_LONG;
 				if (retcode < 0)
 					return retcode;
 				else if (retcode == 2)
@@ -364,6 +365,8 @@ int assembler(std::string code, USHORT ret[], int retLen)
 				nw = 0;
 				lcase(a);
 				retcode = retArgNum(a, retop.a, nw, true);
+				if (codelen + retcode > retLen)
+					return _ERR_ASM_TOO_LONG;
 				if (retcode < 0)
 					return retcode;
 				else if (retcode == 2)
