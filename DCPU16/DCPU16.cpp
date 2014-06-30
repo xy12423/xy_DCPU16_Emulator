@@ -23,6 +23,11 @@ DWORD WINAPI doCodeThreadBegin(LPVOID lpParam)
 }
 #endif
 
+#ifdef _P_LIN
+pthread_attr_t attr;
+pthread_t tid;
+#endif
+
 void doCodeThreadStarter()
 {
 	doCodeB = true;
@@ -53,8 +58,6 @@ void CALLBACK timer(UINT uTimerID, UINT uMsg, DWORD_PTR dwUser, DWORD_PTR dw1, D
 }
 #endif
 #ifdef _P_LIN
-pthread_attr_t attr;
-pthread_t tid;
 void timer()
 {
 	while (doCodeB)
@@ -282,6 +285,12 @@ void generate(string path, USHORT wAdd = 0, bool printLabel = false)
 	try
 	{
 		asmFile(path, mem, 65536, wAdd, printLabel);
+	}
+	catch (std::list<std::string>* err)
+	{
+		std::list<std::string>::const_iterator p, pEnd = err->cend();
+		for (p = err->cbegin(); p != pEnd; p++)
+			std::cout << *p << std::endl;
 	}
 	catch (std::string err)
 	{
@@ -568,10 +577,6 @@ int main(int argc, char* argv[])
 			len = filename.length();
 			if (len < 1)
 				continue;
-			fname = new char[len + 1];
-			for (i = 0; i < len; i++)
-				fname[i] = filename[i];
-			fname[len] = '\0';
 #ifdef _P_WIN
 			HMODULE plugin = LoadLibrary(filename.c_str());
 			if (plugin != NULL)
@@ -585,9 +590,9 @@ int main(int argc, char* argv[])
 					{
 						logout << "Failed to initialize plugin " << filename << " with error code 0x" << toHEX(initRes) << endl;
 						FreeLibrary(plugin);
-						delete fname;
 						continue;
 					}
+					initF[hwn] = (fInit)(hd);
 				}
 				bool loadSuccess = true;
 				for (i = 0; i < FUNC_COUNT; i++)
@@ -616,7 +621,7 @@ int main(int argc, char* argv[])
 #endif
 #ifdef _P_LIN
 			void *plugin = NULL;
-			plugin = dlopen(fname, RTLD_LAZY);
+			plugin = dlopen(filename.c_str(), RTLD_LAZY);
 			if (plugin == NULL)
 				continue;
 			char* pszErr = dlerror();
@@ -632,7 +637,6 @@ int main(int argc, char* argv[])
 				{
 					logout << "Failed to initialize plugin " << filename << " with error code 0x" << toHEX(initRes) << endl;
 					dlclose(plugin);
-					delete fname;
 					continue;
 				}
 			}
@@ -660,7 +664,6 @@ int main(int argc, char* argv[])
 				((fSetHandle)(*funcAdd[2]))(&setMem, &getMem, &setReg, &getReg, &additr);
 			}
 #endif
-			delete fname;
 		}
 		memset(mem, 0, sizeof(mem));
 		memset(breakPoint, false, sizeof(breakPoint));

@@ -67,7 +67,7 @@ struct defItem
 };
 typedef std::list<defItem> defList;
 
-bool preprocess(std::string path)
+std::list<std::string>* preprocess(std::string path)
 {
 	std::list<std::ifstream> finLst;
 	std::list<std::ifstream>::iterator fin;
@@ -88,6 +88,8 @@ bool preprocess(std::string path)
 		throw(std::string("Can't Open File ") + path);
 	}
 	std::ofstream fout("pp_temp");
+
+	std::list<std::string>* err = new std::list < std::string > ;
 
 	char *line = new char[65536];
 	int lineCount = 0;
@@ -158,25 +160,19 @@ bool preprocess(std::string path)
 						std::ifstream icFile(ppArg);
 						if (!icFile.is_open())
 						{
-							fin->close();
-							finLst.pop_back();
-							while (!finLst.empty())
-							{
-								fin--;
-								fin->close();
-								finLst.pop_back();
-							}
-							fout.close();
-							throw(std::string("Preprocesser:Can't open file ") + ppArg);
+							err->push_back("Preprocesser:Can't open file " + ppArg);
 						}
-						icFile.close();
-						fout << "#file " << ppArg << std::endl;
-						finLst.push_back(std::ifstream(ppArg));
-						fin = finLst.end();
-						fin--;
-						fileName.push_back(ppArg);
-						dir = ppArg.substr(0, ppArg.find_last_of('/') + 1);
-						printLine = false;
+						else
+						{
+							icFile.close();
+							fout << "#file " << ppArg << std::endl;
+							finLst.push_back(std::ifstream(ppArg));
+							fin = finLst.end();
+							fin--;
+							fileName.push_back(ppArg);
+							dir = ppArg.substr(0, ppArg.find_last_of('/') + 1);
+							printLine = false;
+						}
 					}
 					else if (ppCmd == "define")
 					{
@@ -266,7 +262,7 @@ bool preprocess(std::string path)
 							finLst.pop_back();
 						}
 						fout.close();
-						throw(std::string("Preprocesser:Illegal preprocess command #file"));
+						err->push_back("Preprocesser:Illegal preprocess command #file");
 					}
 				}
 				if (ppCmd == "else")
@@ -299,7 +295,7 @@ bool preprocess(std::string path)
 		finLst.pop_back();
 	}
 	fout.close();
-	return false;
+	return err;
 }
 
 bool spacer[] = {
@@ -323,8 +319,9 @@ bool spacer[] = {
 
 int asmFile(std::string path, USHORT retMem[], int retSize, USHORT wAdd = 0, bool printLabel = false, labelList* retLblLst = NULL)
 {
-	if (preprocess(path))	//处理部分预处理
-		return -1;
+	std::list<std::string>* err = preprocess(path);	//处理部分预处理
+	if (err->empty() == false)
+		throw(err);
 	std::ifstream file("pp_temp");
 	std::list<std::string> fileName;
 	std::list<int> lineCountLst;
@@ -400,18 +397,24 @@ int asmFile(std::string path, USHORT retMem[], int retSize, USHORT wAdd = 0, boo
 				}
 				if (lbl.find('$') != std::string::npos)
 				{
-					throw(std::string(fileName.back() + ':' + toStr(*lineCount) + ":Illgeal label:" + lbl));
+					err->push_back(fileName.back() + ':' + toStr(*lineCount) + ":Illgeal label:" + lbl);
 				}
-				lblItr = lblLst.begin();
-				lblEnd = lblLst.end();
-				for (lblItr = lblLst.begin(); lblItr != lblEnd; lblItr++)
+				else
 				{
-					if (lblItr->str == lbl)
+					lblItr = lblLst.begin();
+					lblEnd = lblLst.end();
+					bool success = true;
+					for (lblItr = lblLst.begin(); lblItr != lblEnd; lblItr++)
 					{
-						throw(std::string(fileName.back() + ':' + toStr(*lineCount) + ":Duplicate label:" + lbl));
+						if (lblItr->str == lbl)
+						{
+							err->push_back(fileName.back() + ':' + toStr(*lineCount) + ":Duplicate label:" + lbl);
+							success = false;
+						}
 					}
+					if (success)
+						lblLst.push_back(label(lbl, add, add));
 				}
-				lblLst.push_back(label(lbl, add, add));
 			}
 			if (insline.length() < 1)
 				continue;
@@ -479,7 +482,7 @@ int asmFile(std::string path, USHORT retMem[], int retSize, USHORT wAdd = 0, boo
 				}
 				else
 				{
-					throw(std::string(fileName.back() + ':' + toStr(*lineCount) + ":Undefined preprocess command"));
+					err->push_back(fileName.back() + ':' + toStr(*lineCount) + ":Undefined preprocess command");
 				}
 				insline = "";
 				continue;
@@ -512,10 +515,10 @@ int asmFile(std::string path, USHORT retMem[], int retSize, USHORT wAdd = 0, boo
 			switch (len)
 			{
 				case _ERR_ASM_NOT_SUPPORTED:
-					throw(std::string(fileName.back() + ':' + toStr(*lineCount) + ":Instruction " + line + " is not supported"));
+					err->push_back(fileName.back() + ':' + toStr(*lineCount) + ":Instruction " + line + " is not supported");
 				case _ERR_ASM_ILLEGAL:
 				case _ERR_ASM_ILLEGAL_OP:
-					throw(std::string(fileName.back() + ':' + toStr(*lineCount) + ":Illegal instruction " + line));
+					err->push_back(fileName.back() + ':' + toStr(*lineCount) + ":Illegal instruction " + line);
 				case _ERR_ASM_ILLEGAL_ARG:
 					pendLst.push_back(pendItem(insline, add, 0x20, fileName.back(), *lineCount));
 					joined[add - addShift] = true;
@@ -524,18 +527,20 @@ int asmFile(std::string path, USHORT retMem[], int retSize, USHORT wAdd = 0, boo
 					pendCount++;
 					break;
 				case _ERR_ASM_TOO_LONG:
-					throw(std::string("Out of memory"));
+					err->push_back("Instruction is too long");
 				default:
 					for (i = 0; i < len; i++, add++)
 						m[add - addShift] = arg_ret[i];
 			}
 			insline = "";
 		}
+		if (add > retSize)
+			err->push_back("Instruction is too long");
+		if (err->empty() == false)
+			throw(err);
 		lblLst.sort();	//按标签长度从大到小排序以解决长标签与短标签内容部分重复时长标签被部分替换的问题
 		lblBeg = lblLst.begin();
 		lblEnd = lblLst.end();
-		if (add > retSize)
-			throw(std::string("Out of memory"));
 		int insLenAll = add;
 		//处理未被识别的标签
 		while (!pendLst.empty())
@@ -545,7 +550,10 @@ int asmFile(std::string path, USHORT retMem[], int retSize, USHORT wAdd = 0, boo
 			insline = pendItm.str;
 			add = pendItm.pos;
 			if (add < addShift)
-				throw(std::string("Assembler Error"));
+			{
+				err->push_back("Assembler Error");
+				throw(err);
+			}
 			joined[add - addShift] = false;
 			pendLen = pendItm.len;
 			for (i = 0; i < pendLen; i++)
@@ -590,13 +598,13 @@ int asmFile(std::string path, USHORT retMem[], int retSize, USHORT wAdd = 0, boo
 			switch (len)
 			{
 				case _ERR_ASM_NOT_SUPPORTED:
-					throw(std::string(pendItm.file + ':' + toStr(pendItm.lineN) + ":Instruction " + pendItm.str + " is not supported"));
+					err->push_back(pendItm.file + ':' + toStr(pendItm.lineN) + ":Instruction " + pendItm.str + " is not supported");
 				case _ERR_ASM_ILLEGAL:
 				case _ERR_ASM_ILLEGAL_OP:
 				case _ERR_ASM_ILLEGAL_ARG:
-					throw(std::string(pendItm.file + ':' + toStr(pendItm.lineN) + ":Illegal instruction " + pendItm.str));
+					err->push_back(pendItm.file + ':' + toStr(pendItm.lineN) + ":Illegal instruction " + pendItm.str);
 				case _ERR_ASM_TOO_LONG:
-					throw(std::string("Out of memory"));
+					err->push_back("Instruction is too long");
 				default:
 					for (i = 0; i < len; i++, add++)
 						m[add - addShift] = arg_ret[i];
@@ -625,6 +633,8 @@ int asmFile(std::string path, USHORT retMem[], int retSize, USHORT wAdd = 0, boo
 					}
 			}
 		}
+		if (err->empty() == false)
+			throw(err);
 		if (printLabel && retLblLst != NULL)
 		{
 			retLblLst->clear();
@@ -645,6 +655,13 @@ int asmFile(std::string path, USHORT retMem[], int retSize, USHORT wAdd = 0, boo
 			retMem[add++] = m[i];
 		}
 		return retLen;
+	}
+	catch (std::list<std::string>* err)
+	{
+		file.close();
+		delete[] line;
+		delete[] m;
+		throw(err);
 	}
 	catch (std::string err)
 	{

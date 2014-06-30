@@ -50,6 +50,10 @@ int doL2(opcode code)
 			pc = a;
 			cycle += 3;
 			break;
+		case 0x02:
+			pc = mem[sp++];
+			sp += a;
+			cycle += 3;
 		case 0x08:
 			if (ia != 0)
 				additr(a);

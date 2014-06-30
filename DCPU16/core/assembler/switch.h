@@ -88,7 +88,7 @@ int retOpNum2(std::string op, USHORT &ret)
 			if (op == "rfi")
 				ret = 0x0B;
 			else if (op == "ret")
-				ret = 0x22;
+				ret = 0x02;
 			else
 				return _ERR_ASM_ILLEGAL_OP;
 			break;
@@ -289,7 +289,7 @@ int retOpStr1(USHORT op, std::string &ret)
 std::string op2[] = {
 	std::string(""),
 	std::string("JSR"),
-	std::string(""),
+	std::string("RET"),
 	std::string(""),
 	std::string(""),
 	std::string(""),

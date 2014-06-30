@@ -3,6 +3,10 @@
 #ifndef _H_EMU_DF
 #define _H_EMU_DF
 
+#ifdef __GNUC__
+#define _cdecl __attribute__((cdecl))
+#endif
+
 #ifndef _H_EMU_CLS_DF
 
 typedef unsigned short int USHORT;
