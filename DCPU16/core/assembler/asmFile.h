@@ -339,6 +339,8 @@ int asmFile(std::string path, USHORT retMem[], int retSize, USHORT wAdd = 0, boo
 	memset(m, -1, sizeof(int) * 0x200000);
 	memset(joined, false, sizeof(bool) * 0x200000);
 
+	int retLen = 0;
+
 	try
 	{
 		std::string insline;
@@ -642,7 +644,6 @@ int asmFile(std::string path, USHORT retMem[], int retSize, USHORT wAdd = 0, boo
 				retLblLst->push_back(label(lblItr->str, lblItr->pos, 0));
 		}
 		add = wAdd;
-		int retLen = 0;
 		int emptyCount = 0;
 		for (i = 0; add < insLenAll && i < 0x200000; i++)
 		{
@@ -654,7 +655,6 @@ int asmFile(std::string path, USHORT retMem[], int retSize, USHORT wAdd = 0, boo
 			retLen++;
 			retMem[add++] = m[i];
 		}
-		return retLen;
 	}
 	catch (std::list<std::string>* err)
 	{
@@ -673,7 +673,7 @@ int asmFile(std::string path, USHORT retMem[], int retSize, USHORT wAdd = 0, boo
 	file.close();
 	delete[] line;
 	delete[] m;
-	return 0;
+	return retLen;
 }
 
 #endif
