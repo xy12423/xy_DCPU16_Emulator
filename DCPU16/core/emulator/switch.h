@@ -15,7 +15,7 @@ int reta(USHORT a, USHORT &ret)
 		ret = mem[reg[a - 0x8]];
 	else if (0x10 <= a && a <= 0x17)
 	{
-		ret = mem[(USHORT)(reg[a - 0x10] + mem[pc++])];
+		ret = mem[static_cast<USHORT>(reg[a - 0x10] + mem[pc++])];
 		if (pc > 0xFFFF)
 		{
 			pcOf = true;
@@ -36,7 +36,7 @@ int reta(USHORT a, USHORT &ret)
 				ret = mem[sp];
 				break;
 			case 0x1A:
-				ret = mem[(USHORT)(sp + mem[pc++])];
+				ret = mem[static_cast<USHORT>(sp + mem[pc++])];
 				if (pc > 0xFFFF)
 				{
 					pcOf = true;
@@ -88,7 +88,7 @@ int retb(USHORT b, USHORT &ret)
 		ret = mem[reg[b - 0x8]];
 	else if (0x10 <= b && b <= 0x17)
 	{
-		ret = mem[(USHORT)(reg[b - 0x10] + mem[pc++])];
+		ret = mem[static_cast<USHORT>(reg[b - 0x10] + mem[pc++])];
 		if (pc > 0xFFFF)
 		{
 			pcOf = true;
@@ -107,7 +107,7 @@ int retb(USHORT b, USHORT &ret)
 				ret = mem[sp];
 				break;
 			case 0x1A:
-				ret = mem[(USHORT)(sp + mem[pc++])];
+				ret = mem[static_cast<USHORT>(sp + mem[pc++])];
 				if (pc > 0xFFFF)
 				{
 					pcOf = true;
@@ -158,7 +158,7 @@ int setb(USHORT b, USHORT dat, int shift)
 	else if (0x8 <= b && b <= 0xF)
 		mem[reg[b - 0x8]] = dat;
 	else if (0x10 <= b && b <= 0x17)
-		mem[(USHORT)(reg[b - 0x10] + mem[pc - shift])] = dat;
+		mem[static_cast<USHORT>(reg[b - 0x10] + mem[pc - shift])] = dat;
 	else
 	{
 		switch (b)
@@ -170,7 +170,7 @@ int setb(USHORT b, USHORT dat, int shift)
 				mem[sp] = dat;
 				break;
 			case 0x1A:
-				mem[(USHORT)(sp + mem[pc - shift])] = dat;
+				mem[static_cast<USHORT>(sp + mem[pc - shift])] = dat;
 				break;
 			case 0x1B:
 				sp = dat;

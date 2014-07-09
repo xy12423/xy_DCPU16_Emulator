@@ -447,7 +447,7 @@ int retArgNum(std::string arg, USHORT &ret1, USHORT &ret2, bool isA)
 		arg.erase(0, 1);
 		arg.pop_back();
 		if (calcStr(arg, temp) == 0)
-			arg = "0x" + toHEX((USHORT)(temp));
+			arg = "0x" + toHEX(static_cast<USHORT>(temp));
 		if (arg.length() < 1)
 			return _ERR_ASM_ILLEGAL;
 		int plusPos = arg.find('-');
@@ -492,7 +492,7 @@ int retArgNum(std::string arg, USHORT &ret1, USHORT &ret2, bool isA)
 				else
 					return _ERR_ASM_ILLEGAL_ARG;
 			}
-			ret2 = (USHORT)toNum(shift);
+			ret2 = static_cast<USHORT>(toNum(shift));
 			if (ret2 == 0)
 			{
 				ret1 -= 0x08;
@@ -524,11 +524,11 @@ int retArgNum(std::string arg, USHORT &ret1, USHORT &ret2, bool isA)
 		if (calcStr(arg, temp) == 0)
 		{
 			if (isA && ((-1 <= temp && temp <= 30) || temp == 0xFFFF))
-				ret1 = (USHORT)(temp + 0x21);
+				ret1 = static_cast<USHORT>(temp + 0x21);
 			else
 			{
 				ret1 = 0x1F;
-				ret2 = (USHORT)(temp);
+				ret2 = static_cast<USHORT>(temp);
 				inslen = 2;
 			}
 		}
@@ -572,9 +572,9 @@ int retArgNum(std::string arg, USHORT &ret1, USHORT &ret2, bool isA)
 				ret1 = 0x1A;
 				arg = arg.substr(5);
 				if (calcStr(arg, temp) == 0)
-					ret2 = (USHORT)(temp);
+					ret2 = static_cast<USHORT>(temp);
 				else if (canBeNum(arg))
-					ret2 = (USHORT)toNum(arg);
+					ret2 = static_cast<USHORT>(toNum(arg));
 				else
 					return _ERR_ASM_ILLEGAL_ARG;
 				inslen = 2;
@@ -639,7 +639,7 @@ int retArgStr(USHORT arg1, USHORT arg2, bool isB, std::string &ret)
 				inc = 1;
 				break;
 			default:
-				ret = toHEX((USHORT)(arg1 - 0x21));
+				ret = toHEX(static_cast<USHORT>(arg1 - 0x21));
 				break;
 		}
 	}

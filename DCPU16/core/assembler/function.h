@@ -118,7 +118,7 @@ bool canBeNum(std::string str)
 	if (len < 1)
 		return false;
 	for (int i = 0; i < len; i++)
-		if (numLevel[(BYTE)(str[i])] > level)
+		if (numLevel[static_cast<BYTE>(str[i])] > level)
 			return false;
 	return true;
 }

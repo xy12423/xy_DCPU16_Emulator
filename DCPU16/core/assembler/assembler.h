@@ -181,7 +181,7 @@ int assembler(std::string code, USHORT ret[], int retSize)
 							{
 								if (temp > 0xFFFF || temp < -32768)
 									return _ERR_ASM_ILLEGAL;
-								ret[codeLen++] = (USHORT)(temp);
+								ret[codeLen++] = static_cast<USHORT>(temp);
 							}
 							else if (pItr->front() == '[' && pItr->back() == ']')
 							{
@@ -278,7 +278,7 @@ int assembler(std::string code, USHORT ret[], int retSize)
 						retop.b = 0x1B;
 						if (argc < 0x1F)
 						{
-							retop.a = (USHORT)(argc)+0x21;
+							retop.a = static_cast<USHORT>(argc) + 0x21;
 							ret[codeLen++] = OP2US(retop);
 						}
 						else
@@ -287,7 +287,7 @@ int assembler(std::string code, USHORT ret[], int retSize)
 							ret[codeLen++] = OP2US(retop);
 							if (codeLen + 1 > retSize)
 								return _ERR_ASM_TOO_LONG;
-							ret[codeLen++] = (USHORT)(argc);
+							ret[codeLen++] = static_cast<USHORT>(argc);
 						}
 						argc -= 7;
 						if (codeLen + 7 > retSize)
@@ -321,7 +321,7 @@ int assembler(std::string code, USHORT ret[], int retSize)
 							retop.b = 0x1B;
 							if (argc < 0x1F)
 							{
-								retop.a = (USHORT)(argc)+0x21;
+								retop.a = static_cast<USHORT>(argc)+0x21;
 								ret[codeLen++] = OP2US(retop);
 							}
 							else
@@ -330,7 +330,7 @@ int assembler(std::string code, USHORT ret[], int retSize)
 								ret[codeLen++] = OP2US(retop);
 								if (codeLen + 1 > retSize)
 									return _ERR_ASM_TOO_LONG;
-								ret[codeLen++] = (USHORT)(argc);
+								ret[codeLen++] = static_cast<USHORT>(argc);
 							}
 						}
 						if (codeLen + 7 > retSize)

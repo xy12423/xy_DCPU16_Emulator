@@ -2,6 +2,12 @@
 #include "core/main.h"
 using namespace std;
 
+/*
+#define const_iterator iterator
+#define cbegin begin
+#define cend end
+//*/
+
 #define INS_RET_LEN 65536
 
 USHORT m_ret[INS_RET_LEN];
@@ -140,7 +146,7 @@ void unasm(string arg)
 	if (arg != "")
 		add = toNum(arg);
 	USHORT end = add + 0x40;
-	string ins("");
+	string ins;
 	for (; add < end; )
 	{
 		printf("%04X:", add);
@@ -347,29 +353,27 @@ void printUsage()
 
 int mainLoop(char *argv = NULL)
 {
-	char _cmd[100];
 	string cmd;
 	if (argv != NULL)
 		cmd = argv;
+	else
+	{
+		while (true)
+		{
+			cout << '-';
+			getline(cin, cmd, '\n');
+			trim(cmd);
+			if (cmd.length() < 1)
+				cout << "  ^ Error" << endl;
+			else
+				break;
+		}
+	}
 	string filePath;
 	int i, argn;
-	cout << '-';
 	while (true)
 	{
-		if (argv == NULL)
-		{
-			cin.getline(_cmd, 100, '\n');
-			cmd = _cmd;
-		}
-		else
-			argv = NULL;
-		trim(cmd);
-		if (cmd.length() < 1)
-		{
-			cout << "  ^ Error" << endl << "-";
-			continue;
-		}
-		if (cmd[0] != 'q')
+		if (cmd.front() != 'q')
 		{
 			argn = 0;
 			m_arg[0] = "";
@@ -395,141 +399,152 @@ int mainLoop(char *argv = NULL)
 		}
 		if (cmd.length() != 1)
 		{
-			cout << "  ^ Error" << endl << "-";
-			continue;
+			cout << "  ^ Error" << endl;
 		}
-		switch (cmd[0])
+		else
 		{
-			case 'q':
-				return 0;
-			case '?':
-				printUsage();
-				break;
-			case 'd':
-				dump(m_arg[0]);
-				break;
-			case 'e':
-				enter(argn, m_arg);
-				break;
-			case 'r':
-				regist(m_arg[0]);
-				break;
-			case 'a':
-				assm(m_arg[0]);
-				break;
-			case 'u':
-				unasm(m_arg[0]);
-				break;
-			case 't':
-				trace(m_arg[0]);
-				break;
-			case 'p':
-				proceed();
-				break;
-			case 'n':
-				filePath = m_arg[0];
-				break;
-			case 'l':
+			switch (cmd.front())
 			{
-				fstream file;
-				char fileDatO = 0;
-				USHORT fileDat = 0;
-				int filePtr = 0;
-				file.open(filePath, ios::in | ios::binary);
-				filePtr = (USHORT)(toNum(m_arg[0]));
-				if (!file.is_open())
-				{
-					cout << "  ^ Error:File not exists" << endl;
+				case 'q':
+					return 0;
+				case '?':
+					printUsage();
 					break;
-				}
-				while (!file.eof())
-				{
-					file.get(fileDatO);
-					fileDat = (BYTE)(fileDatO);
-					file.get(fileDatO);
-					fileDat = (fileDat << 8) + (BYTE)(fileDatO);
-					mem[filePtr++] = fileDat;
-				}
-				file.close();
-				break;
-			}
-			case 'w':
-			{
-				fstream file;
-				char fileDatO = 0;
-				USHORT fileDat = 0;
-				int filePtr = 0, fileEndPtr = 0;
-				file.open(filePath, ios::out | ios::binary | ios::trunc);
-				if (!file.is_open())
-				{
-					cout << "  ^ Error:Can't Open File" << endl;
+				case 'd':
+					dump(m_arg[0]);
 					break;
-				}
-				filePtr = (USHORT)(toNum(m_arg[0]));
-				fileEndPtr = (USHORT)(toNum(m_arg[1]));
-				for (; filePtr <= fileEndPtr; filePtr++)
+				case 'e':
+					enter(argn, m_arg);
+					break;
+				case 'r':
+					regist(m_arg[0]);
+					break;
+				case 'a':
+					assm(m_arg[0]);
+					break;
+				case 'u':
+					unasm(m_arg[0]);
+					break;
+				case 't':
+					trace(m_arg[0]);
+					break;
+				case 'p':
+					proceed();
+					break;
+				case 'n':
+					filePath = m_arg[0];
+					break;
+				case 'l':
 				{
-					file.put((mem[filePtr] & 0xFF00) >> 8);
-					file.put(mem[filePtr] & 0xFF);
-				}
-				file.close();
-				break;
-			}
-			case 'g':
-			{
-				USHORT add = 0;
-				bool labelOut = false;
-				string *arg;
-				string path = filePath;
-				for (i = 0; i < argn; i++)
-				{
-					arg = &m_arg[i];
-					if (arg->front() == '-')
+					fstream file;
+					char fileDatO = 0;
+					USHORT fileDat = 0;
+					int filePtr = 0;
+					file.open(filePath, ios::in | ios::binary);
+					filePtr = static_cast<USHORT>(toNum(m_arg[0]));
+					if (!file.is_open())
 					{
-						arg->erase(0, 1);
-						if (arg->length() < 1)
+						cout << "  ^ Error:File not exists" << endl;
+						break;
+					}
+					while (!file.eof())
+					{
+						file.get(fileDatO);
+						fileDat = static_cast<BYTE>(fileDatO);
+						file.get(fileDatO);
+						fileDat = (fileDat << 8) + static_cast<BYTE>(fileDatO);
+						mem[filePtr++] = fileDat;
+					}
+					file.close();
+					break;
+				}
+				case 'w':
+				{
+					fstream file;
+					char fileDatO = 0;
+					USHORT fileDat = 0;
+					int filePtr = 0, fileEndPtr = 0;
+					file.open(filePath, ios::out | ios::binary | ios::trunc);
+					if (!file.is_open())
+					{
+						cout << "  ^ Error:Can't Open File" << endl;
+						break;
+					}
+					filePtr = static_cast<USHORT>(toNum(m_arg[0]));
+					fileEndPtr = static_cast<USHORT>(toNum(m_arg[1]));
+					for (; filePtr <= fileEndPtr; filePtr++)
+					{
+						file.put((mem[filePtr] & 0xFF00) >> 8);
+						file.put(mem[filePtr] & 0xFF);
+					}
+					file.close();
+					break;
+				}
+				case 'g':
+				{
+					USHORT add = 0;
+					bool labelOut = false;
+					string *arg;
+					string path = filePath;
+					for (i = 0; i < argn; i++)
+					{
+						arg = &m_arg[i];
+						if (arg->front() == '-')
 						{
-							cout << "  ^ Error" << endl;
-							break;
-						}
-						if ((*arg) == "a")
-						{
-							i++;
-							add = toNum(m_arg[i]);
-						}
-						else if ((*arg) == "-lo")
-						{
-							i++;
-							if (m_arg[i] == "true")
-								labelOut = true;
-							else if (m_arg[i] == "false")
-								labelOut = false;
-							else
+							arg->erase(0, 1);
+							if (arg->length() < 1)
 							{
 								cout << "  ^ Error" << endl;
 								break;
 							}
+							if ((*arg) == "a")
+							{
+								i++;
+								add = toNum(m_arg[i]);
+							}
+							else if ((*arg) == "-lo")
+							{
+								i++;
+								if (m_arg[i] == "true")
+									labelOut = true;
+								else if (m_arg[i] == "false")
+									labelOut = false;
+								else
+								{
+									cout << "  ^ Error" << endl;
+									break;
+								}
+							}
+						}
+						else
+						{
+							path = m_arg[i];
 						}
 					}
-					else
-					{
-						path = m_arg[i];
-					}
+					generate(path, add, labelOut);
+					break;
 				}
-				generate(path, add, labelOut);
-				break;
+				case 'i':
+					init();
+					break;
+				case 'b':
+					breakpoint(m_arg[0]);
+					break;
+				default:
+					cout << "  ^ Error" << endl;
+					break;
 			}
-			case 'i':
-				init();
-				break;
-			case 'b':
-				breakpoint(m_arg[0]);
-				break;
-			default:
+		}
+		while (true)
+		{
+			cout << '-';
+			getline(cin, cmd, '\n');
+			trim(cmd);
+			if (cmd.length() < 1)
 				cout << "  ^ Error" << endl;
+			else
 				break;
 		}
-		cout << '-';
 	}
 	return 0;
 }
@@ -585,14 +600,14 @@ int main(int argc, char* argv[])
 				FARPROC hd = GetProcAddress(plugin, "init");
 				if (hd != NULL)
 				{
-					int initRes = ((fInit)(*hd))();
+					int initRes = (reinterpret_cast<fInit>(hd))();
 					if (initRes != 0)
 					{
 						logout << "Failed to initialize plugin " << filename << " with error code 0x" << toHEX(initRes) << endl;
 						FreeLibrary(plugin);
 						continue;
 					}
-					initF[hwn] = (fInit)(hd);
+					initF[hwn] = reinterpret_cast<fInit>(hd);
 				}
 				bool loadSuccess = true;
 				for (i = 0; i < FUNC_COUNT; i++)
@@ -609,11 +624,16 @@ int main(int argc, char* argv[])
 				}
 				if (loadSuccess)
 				{
-					int hwCount = ((fGetHWCount)(*funcAdd[0]))();
+					int hwCount = (reinterpret_cast<fGetHWCount>(funcAdd[0]))();
 					hd = funcAdd[1];
 					for (i = 0; i < hwCount; i++)
-						hwt[hwn++] = ((fGetInfo)(*hd))(i);
-					((fSetHandle)(*funcAdd[2]))(&setMem, &getMem, &setReg, &getReg, &additr);
+						hwt[hwn++] = (reinterpret_cast<fGetInfo>(hd))(i);
+					(reinterpret_cast<fSetHandle>(*funcAdd[2]))(
+						reinterpret_cast<void *>(&setMem),
+						reinterpret_cast<void *>(&getMem),
+						reinterpret_cast<void *>(&setReg),
+						reinterpret_cast<void *>(&getReg),
+						reinterpret_cast<void *>(&additr));
 				}
 			}
 			else
@@ -628,7 +648,7 @@ int main(int argc, char* argv[])
 			if (pszErr != NULL)
 				continue;
 			logout << "Loaded plugin " << filename << endl;
-			fInit initF = dlsym(plugin, "init");
+			fInit initF = reinterpret_cast<fInit>(dlsym(plugin, "init"));
 			pszErr = dlerror();
 			if (pszErr != NULL)
 			{
@@ -644,7 +664,7 @@ int main(int argc, char* argv[])
 			voidFunc hd;
 			for (i = 0; i < FUNC_COUNT; i++)
 			{
-				hd = dlsym(plugin, funcName[i]);
+				hd = reinterpret_cast<voidFunc>(dlsym(plugin, funcName[i]));
 				pszErr = dlerror();
 				if (pszErr != NULL)
 				{
@@ -657,11 +677,16 @@ int main(int argc, char* argv[])
 			}
 			if (loadSuccess)
 			{
-				int hwCount = ((fGetHWCount)(*funcAdd[0]))();
+				int hwCount = (reinterpret_cast<fGetHWCount>(funcAdd[0]))();
 				hd = funcAdd[1];
 				for (i = 0; i < hwCount; i++)
-					hwt[hwn++] = ((fGetInfo)(*hd))(i);
-				((fSetHandle)(*funcAdd[2]))(&setMem, &getMem, &setReg, &getReg, &additr);
+					hwt[hwn++] = (reinterpret_cast<fGetInfo>(hd))(i);
+				(reinterpret_cast<fSetHandle>(*funcAdd[2]))(
+					reinterpret_cast<void *>(&setMem),
+					reinterpret_cast<void *>(&getMem),
+					reinterpret_cast<void *>(&setReg),
+					reinterpret_cast<void *>(&getReg),
+					reinterpret_cast<void *>(&additr));
 			}
 #endif
 		}
