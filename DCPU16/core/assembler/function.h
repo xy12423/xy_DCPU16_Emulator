@@ -125,9 +125,12 @@ bool canBeNum(std::string str)
 
 int toNum(std::string str, int type = 0)
 {
-	int ret = INT_MIN, len = str.length();
+	int len = str.length();
+	long long ret = 0;
 	if (len < 1)
-		return INT_MIN;
+		return 0;
+	if (canBeNum(str) == false)
+		return 0;
 	std::stringstream ss;
 	bool negative = false;
 	if (str.front() == '-')
@@ -145,7 +148,7 @@ int toNum(std::string str, int type = 0)
 	{
 		case 0:
 			if (len == 0)
-				return INT_MIN;
+				return 0;
 			if (str.back() == 'h' || str.back() == 'H')
 			{
 				str.erase(len - 1, 1);
@@ -332,10 +335,7 @@ int calcPost(postExp* exp, long long &ret)
 		switch (p->type)
 		{
 			case 0:
-				if (canBeNum(p->str))
-					numStack.push_back(toNum(p->str));
-				else
-					return -1;
+				numStack.push_back(toNum(p->str));
 				break;
 			case 1:
 				if (numStack.empty())

@@ -637,7 +637,7 @@ int main(int argc, char* argv[])
 				}
 			}
 			else
-				logout << "Failed to load plugin " << filename << endl;
+				logout << "Failed to load plugin " << filename << ":LoadLibrary Failed" << endl;
 #endif
 #ifdef _P_LIN
 			void *plugin = NULL;
@@ -711,7 +711,7 @@ int main(int argc, char* argv[])
 	{
 		logout << "Error:" << ex << endl;
 	}
-	catch (const runtime_error &ex)
+	catch (const exception &ex)
 	{
 		logout << "Error:" << ex.what() << endl;
 	}

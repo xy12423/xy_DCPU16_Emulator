@@ -75,10 +75,16 @@ void preprcs(std::string &op, std::string &b, std::string &a, int &codeType)
 	}
 	int bracketPos = b.find('[');
 	if (bracketPos != std::string::npos && bracketPos != 0 && b.back() == ']')
-		b = "[" + b.substr(0, bracketPos) + "+" + b.substr(bracketPos + 1);
+	{
+		b.pop_back();
+		b = "[" + b.substr(0, bracketPos) + "+(" + b.substr(bracketPos + 1) + ")]";
+	}
 	bracketPos = a.find('[');
 	if (bracketPos != std::string::npos && bracketPos != 0 && a.back() == ']')
-		a = "[" + a.substr(0, bracketPos) + "+" + a.substr(bracketPos + 1);
+	{
+		a.pop_back();
+		a = "[" + a.substr(0, bracketPos) + "+(" + a.substr(bracketPos + 1) + ")]";
+	}
 }
 
 struct escchr
