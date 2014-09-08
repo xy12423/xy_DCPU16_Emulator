@@ -150,7 +150,7 @@ int assembler(std::string code, USHORT ret[], int retSize)
 	trim(a);
 	trim(op);
 	lcase(op);
-	preprcs(op, b, a, codeType);	//识别 并处理部分 伪指令及一些奇怪的功能
+	preprcs(op, b, a, codeType);	//识别并处理 部分伪指令及一些奇怪的功能
 	int retVal = 0;
 	switch (codeType)	//按操作数多少分类
 	{
