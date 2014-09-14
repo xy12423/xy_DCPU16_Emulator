@@ -3,7 +3,7 @@
 #ifndef _H_ASM_FU
 #define _H_ASM_FU
 
-#include "define.h"
+#include "define.hpp"
 #include <sstream>
 #include <climits>
 #include <cctype>
@@ -123,7 +123,7 @@ bool canBeNum(std::string str)
 	return true;
 }
 
-int toNum(std::string str, int type = 0)
+long long toNum(std::string str, int type = 0)
 {
 	int len = str.length();
 	long long ret = 0;

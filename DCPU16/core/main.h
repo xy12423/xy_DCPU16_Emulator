@@ -2,5 +2,5 @@
 
 #include <cstring>
 
-#include "emulator/emulator.h"
-#include "assembler/asmFile.h"
+#include "emulator/emulator.hpp"
+#include "assembler/asmFile.hpp"

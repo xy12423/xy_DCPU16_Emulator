@@ -4,7 +4,7 @@
 #define _H_FP
 
 #include "stdafx.h"
-#include "defines.h"
+#include "defines.hpp"
 
 volatile USHORT floppyState = FLOPPY_STATE_NO_MEDIA;
 volatile USHORT floppyError = FLOPPY_ERROR_NONE;

@@ -4,9 +4,9 @@
 #define _H_ASM_AS
 
 #include <string>
-#include "define.h"
-#include "function.h"
-#include "switch.h"
+#include "define.hpp"
+#include "function.hpp"
+#include "switch.hpp"
 
 int errD = 0;
 
@@ -193,7 +193,7 @@ int assembler(std::string code, USHORT ret[], int retSize)
 							{
 								pItr->erase(0, 1);
 								pItr->pop_back();
-								for (int i = toNum(*pItr); i > 0 && codeLen < retSize; i--)
+								for (int i = static_cast<int>(toNum(*pItr)); i > 0 && codeLen < retSize; i--)
 									ret[codeLen++] = 0;
 							}
 							else if (pItr->front() == '"' && pItr->back() == '"')

@@ -4,7 +4,7 @@
 #define _H_CK
 
 #include "stdafx.h"
-#include "defines.h"
+#include "defines.hpp"
 
 int state = 0;
 MMRESULT res;

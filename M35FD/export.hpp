@@ -3,8 +3,8 @@
 #ifndef _H_EXP
 #define _H_EXP
 
-#include "defines.h"
-#include "floppy.h"
+#include "defines.hpp"
+#include "floppy.hpp"
 
 #define HW_COUNT 1
 hardware info[HW_COUNT];

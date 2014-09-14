@@ -113,7 +113,7 @@ void assm(string arg)
 	char in[50];
 	string ins;
 	if (arg != "")
-		add = toNum(arg, 3);
+		add = static_cast<USHORT>(toNum(arg, 3));
 	while (true)
 	{
 		printf("%04X:", add);
@@ -144,7 +144,7 @@ void unasm(string arg)
 {
 	static USHORT add = 0;
 	if (arg != "")
-		add = toNum(arg);
+		add = static_cast<USHORT>(toNum(arg));
 	USHORT end = add + 0x40;
 	string ins;
 	for (; add < end; )
@@ -161,7 +161,7 @@ void dump(string arg)
 {
 	static UINT add = 0;
 	if (arg != "")
-		add = toNum(arg);
+		add = static_cast<UINT>(toNum(arg));
 	int i, j;
 	for (i = 0; i < 8; i++)
 	{
@@ -189,9 +189,9 @@ void enter(int argc, string args[])
 		cout << "  ^ Error" << endl;
 		return;
 	}
-	UINT add = toNum(args[0]);
+	UINT add = static_cast<UINT>(toNum(args[0]));
 	for (int i = 1; i < argc && add < 0x10000; i++)
-		mem[add++] = toNum(args[i]);
+		mem[add++] = static_cast<USHORT>(toNum(args[i]));
 	return;
 }
 
@@ -260,7 +260,7 @@ void trace(string arg = "")
 	UINT endAt = pc;
 	if (arg != "")
 	{
-		endAt = toNum(arg, 3);
+		endAt = static_cast<UINT>(toNum(arg, 3));
 		haveArg = true;
 	}
 	string ins;
@@ -306,7 +306,7 @@ void generate(string path, USHORT wAdd = 0, bool printLabel = false)
 
 void breakpoint(string arg = "")
 {
-	int add = toNum(arg);
+	int add = static_cast<int>(toNum(arg));
 	if (add < 0)
 	{
 		cout << "  ^ Error" << endl;
@@ -500,7 +500,7 @@ int mainLoop(char *argv = NULL)
 							if ((*arg) == "a")
 							{
 								i++;
-								add = toNum(m_arg[i]);
+								add = static_cast<USHORT>(toNum(m_arg[i]));
 							}
 							else if ((*arg) == "-lo")
 							{

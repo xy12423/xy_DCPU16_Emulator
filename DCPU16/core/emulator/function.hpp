@@ -3,7 +3,7 @@
 #ifndef _H_EMU_FU
 #define _H_EMU_FU
 
-#include "define.h"
+#include "define.hpp"
 
 opcode US2OP(USHORT code)
 {

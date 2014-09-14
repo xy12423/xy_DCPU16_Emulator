@@ -82,16 +82,16 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="core\assembler\asmFile.h" />
-    <ClInclude Include="core\assembler\assembler.h" />
-    <ClInclude Include="core\assembler\define.h" />
-    <ClInclude Include="core\assembler\function.h" />
-    <ClInclude Include="core\assembler\switch.h" />
-    <ClInclude Include="core\emulator\define.h" />
-    <ClInclude Include="core\emulator\emulator.h" />
-    <ClInclude Include="core\emulator\export.h" />
-    <ClInclude Include="core\emulator\function.h" />
-    <ClInclude Include="core\emulator\switch.h" />
+    <ClInclude Include="core\assembler\asmFile.hpp" />
+    <ClInclude Include="core\assembler\assembler.hpp" />
+    <ClInclude Include="core\assembler\define.hpp" />
+    <ClInclude Include="core\assembler\function.hpp" />
+    <ClInclude Include="core\assembler\switch.hpp" />
+    <ClInclude Include="core\emulator\define.hpp" />
+    <ClInclude Include="core\emulator\emulator.hpp" />
+    <ClInclude Include="core\emulator\export.hpp" />
+    <ClInclude Include="core\emulator\function.hpp" />
+    <ClInclude Include="core\emulator\switch.hpp" />
     <ClInclude Include="core\main.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="stdafx.h" />

@@ -3,7 +3,7 @@
 #ifndef _H_ASM_AF
 #define _H_ASM_AF
 
-#include "assembler.h"
+#include "assembler.hpp"
 #include <list>
 #include <fstream>
 

@@ -15,16 +15,16 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="clock.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="defines.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="export.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
     <ClInclude Include="stdafx.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="clock.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="defines.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="export.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="resource.h">

@@ -3,7 +3,8 @@
 #ifndef _H_ASM_SW
 #define _H_ASM_SW
 
-#include "define.h"
+#include "define.hpp"
+#include "function.hpp"
 
 int retOpNum1(std::string op, USHORT &ret)
 {
@@ -504,7 +505,7 @@ int retArgNum(std::string arg, USHORT &ret1, USHORT &ret2, bool isA)
 		else if (canBeNum(arg))
 		{
 			ret1 = 0x1E;
-			ret2 = toNum(arg);
+			ret2 = static_cast<USHORT>(toNum(arg));
 			inslen = 2;
 		}
 		else

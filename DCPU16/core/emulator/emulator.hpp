@@ -3,10 +3,10 @@
 #ifndef _H_EMU_EM
 #define _H_EMU_EM
 
-#include "define.h"
-#include "switch.h"
-#include "function.h"
-#include "export.h"
+#include "define.hpp"
+#include "switch.hpp"
+#include "function.hpp"
+#include "export.hpp"
 
 int doL1(opcode code)
 {

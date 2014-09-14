@@ -1,8 +1,8 @@
 // dllmain.cpp : 定义 DLL 应用程序的入口点。
 #include "stdafx.h"
-#include "defines.h"
-#include "3DDisplay.h"
-#include "export.h"
+#include "defines.hpp"
+#include "3DDisplay.hpp"
+#include "export.hpp"
 
 HANDLE mainThread = NULL;
 DWORD threadID = 0;

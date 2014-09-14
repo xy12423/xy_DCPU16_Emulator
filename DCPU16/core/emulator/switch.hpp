@@ -3,7 +3,7 @@
 #ifndef _H_EMU_SW
 #define _H_EMU_SW
 
-#include "define.h"
+#include "define.hpp"
 
 int reta(USHORT a, USHORT &ret)
 {

@@ -3,7 +3,7 @@
 #ifndef _H_MAIN
 #define _H_MAIN
 
-#include "defines.h"
+#include "defines.hpp"
 #include "stdafx.h"
 
 char szTitle[] = "3D Vector Display";

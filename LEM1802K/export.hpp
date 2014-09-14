@@ -3,8 +3,8 @@
 #ifndef _H_EXP
 #define _H_EXP
 
-#include "defines.h"
-#include "main.h"
+#include "defines.hpp"
+#include "main.hpp"
 
 #define HW_COUNT 2
 hardware info[HW_COUNT];

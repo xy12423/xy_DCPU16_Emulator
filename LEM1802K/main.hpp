@@ -5,7 +5,7 @@
 
 #define unitLen 3
 
-#include "defines.h"
+#include "defines.hpp"
 #include "stdafx.h"
 
 char szTitle[] = "Monitor";
