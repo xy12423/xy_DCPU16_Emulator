@@ -1,8 +1,8 @@
 // dllmain.cpp : 定义 DLL 应用程序的入口点。
 #include "stdafx.h"
-#include "defines.h"
-#include "floppy.h"
-#include "export.h"
+#include "defines.hpp"
+#include "floppy.hpp"
+#include "export.hpp"
 
 MMRESULT timerHandle = 0;
 

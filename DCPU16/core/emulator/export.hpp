@@ -3,7 +3,7 @@
 #ifndef _H_EMU_EX
 #define _H_EMU_EX
 
-#include "define.h"
+#include "define.hpp"
 
 int _cdecl setMem(USHORT add, USHORT dat)
 {

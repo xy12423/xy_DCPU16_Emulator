@@ -77,9 +77,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="3DDisplay.h" />
-    <ClInclude Include="defines.h" />
-    <ClInclude Include="export.h" />
+    <ClInclude Include="3DDisplay.hpp" />
+    <ClInclude Include="defines.hpp" />
+    <ClInclude Include="export.hpp" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>

@@ -27,38 +27,38 @@
     <ClInclude Include="resource.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="core\emulator\define.h">
-      <Filter>Emulator</Filter>
-    </ClInclude>
-    <ClInclude Include="core\emulator\emulator.h">
-      <Filter>Emulator</Filter>
-    </ClInclude>
-    <ClInclude Include="core\emulator\export.h">
-      <Filter>Emulator</Filter>
-    </ClInclude>
-    <ClInclude Include="core\emulator\function.h">
-      <Filter>Emulator</Filter>
-    </ClInclude>
-    <ClInclude Include="core\emulator\switch.h">
-      <Filter>Emulator</Filter>
-    </ClInclude>
-    <ClInclude Include="core\assembler\assembler.h">
-      <Filter>Assembler</Filter>
-    </ClInclude>
-    <ClInclude Include="core\assembler\define.h">
-      <Filter>Assembler</Filter>
-    </ClInclude>
-    <ClInclude Include="core\assembler\function.h">
-      <Filter>Assembler</Filter>
-    </ClInclude>
-    <ClInclude Include="core\assembler\switch.h">
-      <Filter>Assembler</Filter>
-    </ClInclude>
     <ClInclude Include="core\main.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="core\assembler\asmFile.h">
+    <ClInclude Include="core\assembler\asmFile.hpp">
       <Filter>Assembler</Filter>
+    </ClInclude>
+    <ClInclude Include="core\assembler\assembler.hpp">
+      <Filter>Assembler</Filter>
+    </ClInclude>
+    <ClInclude Include="core\assembler\define.hpp">
+      <Filter>Assembler</Filter>
+    </ClInclude>
+    <ClInclude Include="core\assembler\function.hpp">
+      <Filter>Assembler</Filter>
+    </ClInclude>
+    <ClInclude Include="core\assembler\switch.hpp">
+      <Filter>Assembler</Filter>
+    </ClInclude>
+    <ClInclude Include="core\emulator\define.hpp">
+      <Filter>Emulator</Filter>
+    </ClInclude>
+    <ClInclude Include="core\emulator\emulator.hpp">
+      <Filter>Emulator</Filter>
+    </ClInclude>
+    <ClInclude Include="core\emulator\export.hpp">
+      <Filter>Emulator</Filter>
+    </ClInclude>
+    <ClInclude Include="core\emulator\function.hpp">
+      <Filter>Emulator</Filter>
+    </ClInclude>
+    <ClInclude Include="core\emulator\switch.hpp">
+      <Filter>Emulator</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

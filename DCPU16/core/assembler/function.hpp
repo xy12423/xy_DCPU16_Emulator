@@ -3,7 +3,7 @@
 #ifndef _H_ASM_FU
 #define _H_ASM_FU
 
-#include "define.h"
+#include "define.hpp"
 #include <sstream>
 #include <climits>
 #include <cctype>
@@ -118,16 +118,19 @@ bool canBeNum(std::string str)
 	if (len < 1)
 		return false;
 	for (int i = 0; i < len; i++)
-		if (numLevel[(BYTE)(str[i])] > level)
+		if (numLevel[static_cast<BYTE>(str[i])] > level)
 			return false;
 	return true;
 }
 
-int toNum(std::string str, int type = 0)
+long long toNum(std::string str, int type = 0)
 {
-	int ret = INT_MIN, len = str.length();
+	int len = str.length();
+	long long ret = 0;
 	if (len < 1)
-		return INT_MIN;
+		return 0;
+	if (canBeNum(str) == false)
+		return 0;
 	std::stringstream ss;
 	bool negative = false;
 	if (str.front() == '-')
@@ -145,7 +148,7 @@ int toNum(std::string str, int type = 0)
 	{
 		case 0:
 			if (len == 0)
-				return INT_MIN;
+				return 0;
 			if (str.back() == 'h' || str.back() == 'H')
 			{
 				str.erase(len - 1, 1);

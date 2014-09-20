@@ -3,7 +3,7 @@
 #ifndef _H_MAIN
 #define _H_MAIN
 
-#include "defines.h"
+#include "defines.hpp"
 #include "stdafx.h"
 
 char szTitle[] = "3D Vector Display";
@@ -52,8 +52,8 @@ BOOL DrawGLScene(GLvoid)
 		t = mem[i];
 		glColor3f(t.r, t.g, t.b);
 		glBegin(GL_LINES);
-		glVertex3d(t.x1, t.y1, t.z1);
-		glVertex3d(t.x2, t.y2, t.z2);
+		glVertex3d(t.x1, t.y1, 1.0f - t.z1);
+		glVertex3d(t.x2, t.y2, 1.0f - t.z2);
 		glEnd();
 	}
 	glFlush();

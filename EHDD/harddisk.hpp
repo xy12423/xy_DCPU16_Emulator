@@ -3,6 +3,7 @@
 #ifndef _H_MAIN
 #define _H_MAIN
 
+#include "defines.hpp"
 #include <fstream>
 
 #define HDD_FILENAME "harddisk.dhd"

@@ -4,9 +4,9 @@
 #define _H_ASM_AS
 
 #include <string>
-#include "define.h"
-#include "function.h"
-#include "switch.h"
+#include "define.hpp"
+#include "function.hpp"
+#include "switch.hpp"
 
 int errD = 0;
 
@@ -63,13 +63,28 @@ void preprcs(std::string &op, std::string &b, std::string &a, int &codeType)
 				codeType = 2;
 			}
 			break;
+		case 'r':
+			if (op == "ret" && codeType == 0)
+			{
+				op = "set";
+				b = "pc";
+				a = "pop";
+				codeType = 2;
+			}
+			break;
 	}
 	int bracketPos = b.find('[');
 	if (bracketPos != std::string::npos && bracketPos != 0 && b.back() == ']')
-		b = "[" + b.substr(0, bracketPos) + "+" + b.substr(bracketPos + 1);
+	{
+		b.pop_back();
+		b = "[" + b.substr(0, bracketPos) + "+(" + b.substr(bracketPos + 1) + ")]";
+	}
 	bracketPos = a.find('[');
 	if (bracketPos != std::string::npos && bracketPos != 0 && a.back() == ']')
-		a = "[" + a.substr(0, bracketPos) + "+" + a.substr(bracketPos + 1);
+	{
+		a.pop_back();
+		a = "[" + a.substr(0, bracketPos) + "+(" + a.substr(bracketPos + 1) + ")]";
+	}
 }
 
 struct escchr
@@ -84,49 +99,22 @@ escchr escChr[] = {
 	"\\\"", '"',
 	"\\'", '\'',
 };
-const int escChrC = sizeof(escChr) / sizeof(escchr);
+const int escChrCount = sizeof(escChr) / sizeof(escchr);
 
-int assembler(std::string code, USHORT ret[], int retLen)
+int assembler(std::string code, USHORT ret[], int retSize)
 {
+	if (retSize < 1)
+		return _ERR_ASM_TOO_LONG;
 	trim(code);
 	if (code.length() < 1)
 		return _ERR_ASM_ILLEGAL;
-	{	//分割形似...;...;之类的一行多指令
-		std::list<std::string> *cmdList = divideStr(code, ';');
-		if (cmdList->size() > 1)
-		{
-			std::list<std::string>::const_iterator p, pEnd = cmdList->cend();
-			USHORT *tRet = new USHORT[65536];
-			int codeLen = 0, retCode = 0, i;
-			for (p = cmdList->cbegin(); p != pEnd; p++)
-			{
-				if (p->length() < 1)
-					continue;
-				retCode = assembler(*p, tRet, 65536);
-				if (retCode < 1)
-					return retCode;
-				for (i = 0; i < retCode && codeLen < retLen; i++)
-					ret[codeLen++] = tRet[i];
-				if (codeLen > retLen)
-				{
-					delete tRet;
-					delete cmdList;
-					return _ERR_ASM_TOO_LONG;
-				}
-			}
-			delete tRet;
-			delete cmdList;
-			return codeLen;
-		}
-		delete cmdList;
-	}
 	opcode retop;
 	retop.op = 0;
 	retop.b = 0;
 	retop.a = 0;
 	int len = code.length();
-	int codelen = 1;
-	bool setRetOP = true;
+	int codeLen = 1;
+	bool setRETOP = true;
 	std::string op, b, a;
 	int codeType = -1;
 	{	//将指令分解为指令、操作数两部分
@@ -162,21 +150,21 @@ int assembler(std::string code, USHORT ret[], int retLen)
 	trim(a);
 	trim(op);
 	lcase(op);
-	preprcs(op, b, a, codeType);	//识别 并处理部分 伪指令及一些奇怪的功能
-	int retcode;
+	preprcs(op, b, a, codeType);	//识别并处理 部分伪指令及一些奇怪的功能
+	int retVal = 0;
 	switch (codeType)	//按操作数多少分类
 	{
 		case 0:	//没有操作数
 			retop.op = 0;
-			retcode = retOpNum1(op, retop.a);
-			if (retcode != _ERR_ASM_NOERR)
-				return retcode;
+			retVal = retOpNum1(op, retop.a);
+			if (retVal != _ERR_ASM_NOERR)
+				return retVal;
 			break;
 		case 1:	//1个操作数
 			retop.op = 0;
-			retcode = retOpNum2(op, retop.b);
-			if (retcode != _ERR_ASM_NOERR)
-				return retcode;
+			retVal = retOpNum2(op, retop.b);
+			if (retVal != _ERR_ASM_NOERR)
+				return retVal;
 			if (retop.b > 0x1F)	//如果是伪指令
 			{
 				retop.b -= 0x20;
@@ -188,67 +176,49 @@ int assembler(std::string code, USHORT ret[], int retLen)
 				{
 					case 0x00:	//伪指令dat
 						datList = divideStr(a, ',');
-						codelen = 0;
+						codeLen = 0;
 						pEnd = datList->end();
 						for (pItr = datList->begin(); pItr != pEnd; pItr++)
 						{
+							if (codeLen >= retSize)
+								return _ERR_ASM_TOO_LONG;
 							trim(*pItr);
 							if (calcStr(*pItr, temp) == 0)
 							{
 								if (temp > 0xFFFF || temp < -32768)
 									return _ERR_ASM_ILLEGAL;
-								ret[codelen++] = (USHORT)(temp);
+								ret[codeLen++] = static_cast<USHORT>(temp);
 							}
 							else if (pItr->front() == '[' && pItr->back() == ']')
 							{
 								pItr->erase(0, 1);
 								pItr->pop_back();
-								for (int i = toNum(*pItr); i > 0 && codelen < retLen; i--)
-									ret[codelen++] = 0;
+								for (int i = static_cast<int>(toNum(*pItr)); i > 0 && codeLen < retSize; i--)
+									ret[codeLen++] = 0;
 							}
 							else if (pItr->front() == '"' && pItr->back() == '"')
 							{
 								pItr->erase(0, 1);
 								pItr->pop_back();
-								int i, j;
-								for (i = 0; i < escChrC; i++)
+								int i, chrPos;
+								for (i = 0; i < escChrCount; i++)	//替换转义字符
 								{
-									j = pItr->find(escChr[i].str);
-									while (j != std::string::npos)
+									chrPos = pItr->find(escChr[i].str);
+									while (chrPos != std::string::npos)
 									{
-										*pItr = pItr->substr(0, j) + escChr[i].val + pItr->substr(j + escChr[i].str.length());
-										j = pItr->find(escChr[i].str);
+										*pItr = pItr->substr(0, chrPos) + escChr[i].val + pItr->substr(chrPos + escChr[i].str.length());
+										chrPos = pItr->find(escChr[i].str);
 									}
 								}
 								std::string::const_iterator p = pItr->cbegin();
-								for (i = pItr->length(); i > 0 && codelen < retLen; i--, p++)
-									ret[codelen++] = *p;
+								for (i = pItr->length(); i > 0 && codeLen < retSize; i--, p++)
+									ret[codeLen++] = *p;
 							}
 							else
 								return _ERR_ASM_ILLEGAL_ARG;
 						}
-						setRetOP = false;
+						setRETOP = false;
 						delete datList;
-						break;
-					case 0x02:	//伪指令ret
-						lcase(a);
-						codelen = 0;
-						retop.op = 0x01;
-						retop.b = 0x00;
-						retcode = retArgNum(a, retop.a, nw, true);
-						if (retcode < 0)
-							return retcode;
-						else
-						{
-							ret[codelen++] = OP2US(retop);
-							if (retcode == 2)
-								ret[codelen++] = nw;
-						}
-						ret[codelen++] = 0x6701;
-						ret[codelen++] = 0x0341;
-						ret[codelen++] = 0x0001;
-						ret[codelen++] = 0x6381;
-						setRetOP = false;
 						break;
 				}
 			}
@@ -256,17 +226,21 @@ int assembler(std::string code, USHORT ret[], int retLen)
 			{
 				USHORT nw = 0;
 				lcase(a);
-				retcode = retArgNum(a, retop.a, nw, true);
-				if (retcode < 0)
-					return retcode;
-				else if (retcode == 2)
-					ret[codelen++] = nw;
+				retVal = retArgNum(a, retop.a, nw, true);
+				if (retVal < 0)
+					return retVal;
+				else if (retVal == 2)
+				{
+					if (codeLen >= retSize)
+						return _ERR_ASM_TOO_LONG;
+					ret[codeLen++] = nw;
+				}
 			}
 			break;
 		case 2:	//2个操作数
-			retcode = retOpNum3(op, retop.op);
-			if (retcode != _ERR_ASM_NOERR)
-				return retcode;
+			retVal = retOpNum3(op, retop.op);
+			if (retVal != _ERR_ASM_NOERR)
+				return retVal;
 			if (retop.op > 0x1F)	//如果是伪指令
 			{
 				retop.op -= 0x20;
@@ -277,15 +251,10 @@ int assembler(std::string code, USHORT ret[], int retLen)
 				switch (retop.op)
 				{
 					case 0x01:	//伪指令call
-						codelen = 0;
-						ret[codelen++] = 0x0301;
-						ret[codelen++] = 0x0701;
-						ret[codelen++] = 0x0B01;
-						ret[codelen++] = 0x0F01;
-						ret[codelen++] = 0x1301;
-						ret[codelen++] = 0x1701;
-						ret[codelen++] = 0x1B01;
-						ret[codelen++] = 0x1F01;
+						codeLen = 0;
+						if (codeLen + 1 > retSize)
+							return _ERR_ASM_TOO_LONG;
+						ret[codeLen++] = 0xA363;
 						lcase(a);
 						argList = divideStr(a, ',');
 						argList->reverse();
@@ -294,61 +263,92 @@ int assembler(std::string code, USHORT ret[], int retLen)
 						retop.b = 0x18;
 						for (pItr = argList->begin(); pItr != pEnd; pItr++)
 						{
-							retcode = retArgNum(*pItr, retop.a, nw, true);
-							if (retcode < 0)
-								return retcode;
+							retVal = retArgNum(*pItr, retop.a, nw, true);
+							if (retVal < 0)
+								return retVal;
 							else
 							{
-								ret[codelen++] = OP2US(retop);
-								if (retcode == 2)
-									ret[codelen++] = nw;
+								if (codeLen + retVal > retSize)
+									return _ERR_ASM_TOO_LONG;
+								ret[codeLen++] = OP2US(retop);
+								if (retVal == 2)
+									ret[codeLen++] = nw;
 								argc++;
 							}
 						}
 						delete argList;
+						argc += 7;
+						if (codeLen + 1 > retSize)
+							return _ERR_ASM_TOO_LONG;
+						retop.op = 0x02;
+						retop.b = 0x1B;
+						if (argc < 0x1F)
+						{
+							retop.a = static_cast<USHORT>(argc) + 0x21;
+							ret[codeLen++] = OP2US(retop);
+						}
+						else
+						{
+							retop.a = 0x1F;
+							ret[codeLen++] = OP2US(retop);
+							if (codeLen + 1 > retSize)
+								return _ERR_ASM_TOO_LONG;
+							ret[codeLen++] = static_cast<USHORT>(argc);
+						}
+						argc -= 7;
+						if (codeLen + 7 > retSize)
+							return _ERR_ASM_TOO_LONG;
+						ret[codeLen++] = 0x0701;
+						ret[codeLen++] = 0x0B01;
+						ret[codeLen++] = 0x0F01;
+						ret[codeLen++] = 0x1301;
+						ret[codeLen++] = 0x1701;
+						ret[codeLen++] = 0x1B01;
+						ret[codeLen++] = 0x1F01;
 						lcase(b);
 						retop.op = 0x00;
 						retop.b = 0x01;
-						retcode = retArgNum(b, retop.a, nw, true);
-						if (retcode < 0)
-							return retcode;
+						retVal = retArgNum(b, retop.a, nw, true);
+						if (retVal < 0)
+							return retVal;
 						else
 						{
-							ret[codelen++] = OP2US(retop);
-							if (retcode == 2)
-								ret[codelen++] = nw;
+							if (codeLen + retVal > retSize)
+								return _ERR_ASM_TOO_LONG;
+							ret[codeLen++] = OP2US(retop);
+							if (retVal == 2)
+								ret[codeLen++] = nw;
 						}
-						ret[codelen++] = 0x6001;
 						if (argc > 0)
 						{
+							if (codeLen + 1 > retSize)
+								return _ERR_ASM_TOO_LONG;
 							retop.op = 0x02;
 							retop.b = 0x1B;
 							if (argc < 0x1F)
 							{
-								retop.a = (USHORT)(argc)+0x21;
-								ret[codelen++] = OP2US(retop);
+								retop.a = static_cast<USHORT>(argc)+0x21;
+								ret[codeLen++] = OP2US(retop);
 							}
 							else
 							{
 								retop.a = 0x1F;
-								ret[codelen++] = OP2US(retop);
-								ret[codelen++] = (USHORT)(argc);
+								ret[codeLen++] = OP2US(retop);
+								if (codeLen + 1 > retSize)
+									return _ERR_ASM_TOO_LONG;
+								ret[codeLen++] = static_cast<USHORT>(argc);
 							}
 						}
-						ret[codelen++] = 0x60E1;
-						ret[codelen++] = 0x60C1;
-						ret[codelen++] = 0x60A1;
-						ret[codelen++] = 0x6081;
-						ret[codelen++] = 0x6061;
-						ret[codelen++] = 0x6041;
-						ret[codelen++] = 0x6021;
-						ret[codelen++] = 0x0301;
-						ret[codelen++] = 0x6801;
-						ret[codelen++] = 0x0001;
-						ret[codelen++] = 0x6741;
-						ret[codelen++] = 0x0001;
-						ret[codelen++] = 0x8B62;
-						setRetOP = false;
+						if (codeLen + 7 > retSize)
+							return _ERR_ASM_TOO_LONG;
+						ret[codeLen++] = 0x60E1;
+						ret[codeLen++] = 0x60C1;
+						ret[codeLen++] = 0x60A1;
+						ret[codeLen++] = 0x6081;
+						ret[codeLen++] = 0x6061;
+						ret[codeLen++] = 0x6041;
+						ret[codeLen++] = 0x6021;
+						setRETOP = false;
 						break;
 				}
 			}
@@ -356,24 +356,28 @@ int assembler(std::string code, USHORT ret[], int retLen)
 			{
 				USHORT nw = 0;
 				lcase(b);
-				retcode = retArgNum(b, retop.b, nw, false);
-				if (retcode < 0)
-					return retcode;
-				else if (retcode == 2)
-					ret[codelen++] = nw;
+				retVal = retArgNum(b, retop.b, nw, false);
+				if (codeLen + retVal > retSize)
+					return _ERR_ASM_TOO_LONG;
+				if (retVal < 0)
+					return retVal;
+				else if (retVal == 2)
+					ret[codeLen++] = nw;
 				nw = 0;
 				lcase(a);
-				retcode = retArgNum(a, retop.a, nw, true);
-				if (retcode < 0)
-					return retcode;
-				else if (retcode == 2)
-					ret[codelen++] = nw;
+				retVal = retArgNum(a, retop.a, nw, true);
+				if (codeLen + retVal > retSize)
+					return _ERR_ASM_TOO_LONG;
+				if (retVal < 0)
+					return retVal;
+				else if (retVal == 2)
+					ret[codeLen++] = nw;
 			}
 			break;
 	}
-	if (setRetOP)
+	if (setRETOP)
 		ret[0] = OP2US(retop);
-	return codelen;
+	return codeLen;
 }
 
 int unassembler(USHORT arg1, USHORT arg2, USHORT arg3, std::string &ret)

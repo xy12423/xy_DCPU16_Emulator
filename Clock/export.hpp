@@ -3,7 +3,7 @@
 #ifndef _H_EXP
 #define _H_EXP
 
-#include "clock.h"
+#include "clock.hpp"
 
 #define HW_COUNT 1
 hardware info[HW_COUNT];

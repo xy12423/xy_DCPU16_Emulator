@@ -3,10 +3,10 @@
 #ifndef _H_EMU_EM
 #define _H_EMU_EM
 
-#include "define.h"
-#include "switch.h"
-#include "function.h"
-#include "export.h"
+#include "define.hpp"
+#include "switch.hpp"
+#include "function.hpp"
+#include "export.hpp"
 
 int doL1(opcode code)
 {
@@ -50,6 +50,10 @@ int doL2(opcode code)
 			pc = a;
 			cycle += 3;
 			break;
+		case 0x02:
+			pc = mem[sp++];
+			sp += a;
+			cycle += 3;
 		case 0x08:
 			if (ia != 0)
 				additr(a);
@@ -148,7 +152,7 @@ int doL3()
 			cycle += 2;
 			break;
 		case 0x05:
-			res = (UINT)((short int)(b) * (short int)(a));
+			res = static_cast<UINT>((short int)(b)* (short int)(a));
 			ex = res >> 16;
 			res = res & 0xFFFF;
 			cycle += 2;
@@ -175,8 +179,8 @@ int doL3()
 			else
 			{
 				short int sa = (short int)(a), sb = (short int)(b);
-				res = (USHORT)(sa / sb);
-				ex = (USHORT)((b * 65536) / a);
+				res = static_cast<USHORT>(sa / sb);
+				ex = static_cast<USHORT>((b * 65536) / a);
 			}
 			cycle += 3;
 			break;
@@ -184,7 +188,7 @@ int doL3()
 			if (a == 0)
 				res = 0;
 			else
-				res = (USHORT)(b % a);
+				res = static_cast<USHORT>(b % a);
 			cycle += 3;
 			break;
 		case 0x09:
@@ -193,7 +197,7 @@ int doL3()
 			else
 			{
 				short int sa = (short int)(a), sb = (short int)(b);
-				res = (USHORT)(sa % sb);
+				res = static_cast<USHORT>(sa % sb);
 			}
 			cycle += 3;
 			break;

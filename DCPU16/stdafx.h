@@ -35,6 +35,7 @@
 #pragma comment(lib, "winmm.lib")
 #endif
 #ifdef _P_LIN
+#include <unistd.h>
 #include <dlfcn.h>
 #include <pthread.h>
 #pragma comment(lib, "libpthread.a")
