@@ -35,7 +35,7 @@ void skipsingle()
 	opcode code = US2OP(mem[pc++]);
 	if (_skip_incpc[code.a])
 		pc++;
-	if (_skip_incpc[code.b])
+	if (code.op != 0 && _skip_incpc[code.b])
 		pc++;
 	if (pc > 0xFFFF)
 	{
@@ -53,7 +53,7 @@ int skip()
 	{
 		if (_skip_incpc[code.a])
 			pc++;
-		if (_skip_incpc[code.b])
+		if (code.op != 0 && _skip_incpc[code.b])
 			pc++;
 		if (pc > 0xFFFF)
 		{
@@ -66,7 +66,7 @@ int skip()
 	}
 	if (_skip_incpc[code.a])
 		pc++;
-	if (_skip_incpc[code.b])
+	if (code.op != 0 && _skip_incpc[code.b])
 		pc++;
 	if (pc > 0xFFFF)
 	{
